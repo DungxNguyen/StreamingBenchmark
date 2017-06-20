@@ -1,14 +1,37 @@
-Sys.setenv(SPARK_HOME = "/home/dnguyen/spark-2.1.1-bin-hadoop2.7")
-library(SparkR, lib.loc = c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib")))
-sparkR.session(master = "local[*]", sparkConfig = list(spark.driver.memory = "2g"))
+Sys.setenv(SPARK_HOME="/opt/cloudera/parcels/CDH-5.5.1-1.cdh5.5.1.p0.11/lib/spark/");
+Sys.setenv(HADOOP_CONF_DIR="/etc/hive/conf");
+Sys.setenv(JAVA_HOME="/usr/java/default/");
+Sys.setenv(SPARK_SUBMIT_ARGS = "--master yarn-client sparkr-shell")
+.libPaths(c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib"), .libPaths()));
+library(SparkR);
+library(ggplot2)
+
+sc <- sparkR.session(appName="CyberStream Analysis R Jupyter Hub", sparkConfig = list(
+  spark.yarn.queue = "data",
+  spark.driver.maxResultSize = "16g",
+  spark.shuffle.service.enabled = "true",
+  spark.dynamicAllocation.enabled = "true",
+  spark.dynamicAllocation.maxExecutors = "1000",
+  spark.executor.cores = "4",
+  spark.executor.memory = "16g",
+  spark.r.driver.command = "/software/R-3.4.1/bin/Rscript",
+  spark.r.command = "/software/R-3.4.1/bin/Rscript",
+  #spark.executorEnv.PATH = "/opt/wakari/anaconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/software/py3/bin:/usr/bin",
+  #spark.r.use.daemon = "false",
+  #spark.sparkr.use.daemon = "false",
+  spark.r.heartBeatInterval = "600s",
+  spark.executor.heartbeatInterval = "3600s"))
+
+NUMBER_OF_SAMPLES <- 100
+
+timestamp <- sort(base::sample(seq(as.POSIXct("2017-01-01 00:00:00"), as.POSIXct("2017-01-31 23:59:59"), by = 1), NUMBER_OF_SAMPLES, replace = TRUE))
+head(timestamp)
 
 # Create R data frame
-data <- data.frame(id = 1:100,
-                   Date = base::sample(seq(as.Date("2017-01-01"), as.Date("2017-01-31"), by = "day"), 100, replace = TRUE),
-                   level = ifelse(runif(10)<0.3, "WARN", "ERROR"))
-
-# Order by Date
-data <- data[with(data, order(Date)),]
+data <- data.frame(id = 1:NUMBER_OF_SAMPLES,
+                   timestamp = timestamp,
+                   Date = as.Date(timestamp),
+                   level = ifelse(runif(NUMBER_OF_SAMPLES)<0.3, "WARN", "ERROR"))
 
 # Convert R dataframe to Spark DataFrame
 sparkData <- as.DataFrame(data)
@@ -27,7 +50,7 @@ collect(select(sparkData, "Date"))
 collect(filter(sparkData, sparkData$Date == "2017-01-13"))
 collect(filter(sparkData, sparkData$Date %in% c("2017-01-15", "2017-01-20")))
 collect(filter(sparkData, sparkData$Date %in% c("2017-01-15", "2017-01-20") & 
-                          sparkData$level == "ERROR"))
+                 sparkData$level == "ERROR"))
 
 # grouping
 collect(summarize(groupBy(sparkData, sparkData$Date), count = n(sparkData$Date)))
@@ -55,3 +78,9 @@ head(collect(newData))
 # SQL
 createOrReplaceTempView(sparkData, "sparkDataTable")
 collect(sql("SELECT * FROM sparkDataTable WHERE level == 'ERROR'"))
+
+# count data by day
+countByDay <- collect(count(group_by(sparkData, "Date")))
+head(countByDay)
+ggplot(data = countByDay, aes(x=Date, y=count)) + geom_line() + geom_point()
+
