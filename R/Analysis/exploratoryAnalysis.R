@@ -22,7 +22,8 @@ sc <- sparkR.session(appName="CyberStream Analysis R Jupyter Hub", sparkConfig =
   spark.r.heartBeatInterval = "600s",
   spark.executor.heartbeatInterval = "3600s"))
 
-NUMBER_OF_SAMPLES <- 100
+# Number of sample
+NUMBER_OF_SAMPLES <- 1000
 
 timestamp <- sort(base::sample(seq(as.POSIXct("2017-01-01 00:00:00"), as.POSIXct("2017-01-31 23:59:59"), by = 1), NUMBER_OF_SAMPLES, replace = TRUE))
 head(timestamp)
@@ -31,7 +32,7 @@ head(timestamp)
 data <- data.frame(id = 1:NUMBER_OF_SAMPLES,
                    timestamp = timestamp,
                    Date = as.Date(timestamp),
-                   level = ifelse(runif(NUMBER_OF_SAMPLES)<0.3, "WARN", "ERROR"))
+                   level = ifelse(runif(NUMBER_OF_SAMPLES)<0.3, "ERROR", "WARN"))# Create R data frame
 
 # Convert R dataframe to Spark DataFrame
 sparkData <- as.DataFrame(data)
@@ -50,7 +51,7 @@ collect(select(sparkData, "Date"))
 collect(filter(sparkData, sparkData$Date == "2017-01-13"))
 collect(filter(sparkData, sparkData$Date %in% c("2017-01-15", "2017-01-20")))
 collect(filter(sparkData, sparkData$Date %in% c("2017-01-15", "2017-01-20") & 
-                 sparkData$level == "ERROR"))
+                          sparkData$level == "ERROR"))
 
 # grouping
 collect(summarize(groupBy(sparkData, sparkData$Date), count = n(sparkData$Date)))
@@ -89,7 +90,7 @@ countByDayAndLevel <- collect(count(group_by(sparkData, "Date", "level")))
 head(countByDayAndLevel)
 ggplot(data = countByDayAndLevel, aes(x = Date, y = count, color = level)) + geom_point() + geom_line()
 
-# count data by hour and level 
+# count data by hour in month and level 
 # create hour column
 # care about type of data.frame
 # it's easy to convert list to data.frame
@@ -104,7 +105,7 @@ hourConvert <- function(x){
   return(hour)
 }
 hourSchema <- structType(structField("Hour", "string"), structField("Count", "integer"))
-hourData <- dapply(sparkData, hourConvert, hourSchema)
+hourData <- summarize(groupBy(dapply(sparkData, hourConvert, hourSchema), "Hour"), Count = "sum")
 collect(hourData)
 
 # Function that create error
@@ -119,3 +120,16 @@ hourConvertError(x)
 hourData <- dapply(sparkData, hourConvertError, hourSchema)
 collect(hourData)
 # End of error code segment
+
+# count hour in day
+hourInDayConvert <- function(x){
+  hour <- as.POSIXct(x$timestamp, origin = "1970-01-01")
+  hour <- format(hour, "%H")
+  hour <- as.data.frame(table(hour), stringsAsFactors = FALSE)
+  return(hour)
+}
+hourSchema <- structType(structField("Hour", "string"), structField("Count", "integer"))
+hourInDayData <- summarize(groupBy(dapply(sparkData, hourInDayConvert, hourSchema), "Hour"), Count = "sum")
+hourInDayDataR <- collect(hourInDayData)
+names(hourInDayDataR) <- c("Hour", "Count")
+ggplot(data = hourInDayDataR, aes(x = Hour, y = Count)) + geom_bar(stat = "identity") 
