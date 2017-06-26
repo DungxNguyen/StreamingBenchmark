@@ -13,7 +13,7 @@ NUMBER_OF_SAMPLES <- 1000
 
 sparkData <- NULL
 
-if(Sys.info()["sysname"] != "Linux") {
+if(Sys.info()["user"] == "qxs0269") {
   Sys.setenv(SPARK_HOME = "/opt/cloudera/parcels/CDH-5.5.1-1.cdh5.5.1.p0.11/lib/spark/")
   Sys.setenv(HADOOP_CONF_DIR = "/etc/hive/conf")
   Sys.setenv(JAVA_HOME = "/usr/java/default/")
@@ -30,8 +30,8 @@ if(Sys.info()["sysname"] != "Linux") {
       spark.shuffle.service.enabled = "true",
       spark.dynamicAllocation.enabled = "true",
       spark.dynamicAllocation.maxExecutors = "1000",
-      spark.executor.cores = "3",
-      spark.executor.memory = "36g",
+      spark.executor.cores = "4",
+      spark.executor.memory = "24g",
       spark.r.driver.command = "/software/R-3.4.1/bin/Rscript",
       spark.r.command = "/software/R-3.4.1/bin/Rscript",
       #spark.executorEnv.PATH = "/opt/wakari/anaconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/software/py3/bin:/usr/bin",
@@ -39,8 +39,8 @@ if(Sys.info()["sysname"] != "Linux") {
       #spark.sparkr.use.daemon = "false",
       spark.r.heartBeatInterval = "3600s",
       spark.executor.heartbeatInterval = "3600s"
-      )
     )
+  )
   
   sparkData <- read.df("/data/connected_drive_parquet/month=201705/dataset=b2vxfcdgwus")
   
@@ -149,4 +149,31 @@ head(levelCatCount)
 # List those combinations & Count the number of each combination between level and category
 levelCatCombinationCount <- count(groupBy(sparkData, "level", "cat"))
 levelCatCombinationCountDesc <- arrange(levelCatCombinationCount, desc(levelCatCombinationCount$count))
-head(levelCatCombinationCountDesc)
+levelCatCombinationAll <- collect(levelCatCombinationCountDesc)
+
+# Function to list combinations & count the number of each
+Combinations <- function(data, ...){
+  combinations <- count(groupBy(data, ...))
+  combinations <- arrange(combinations, desc(combinations$count))
+  collect(combinations)
+}
+
+Combinations(sparkData, "level", "cat", "comp")
+Combinations(sparkData, "level", "cat", "origin")
+Combinations(sparkData, "comp", "origin")
+Combinations(sparkData, "level", "cat", "comp", "origin")
+
+# Number of combinations level x category x origin
+levelCatOriginCount <- select(sparkData, countDistinct(sparkData$cat, sparkData$level, sparkData$origin))
+head(levelCatOriginCount)
+
+# Number of combinations level x category x origin x comp
+levelCatOriginCompCount <- select(sparkData, countDistinct(sparkData$cat, sparkData$level, 
+                                                           sparkData$origin, sparkData$comp))
+head(levelCatOriginCompCount)
+
+# Number of combinations level x category x origin x comp x msg
+levelCatOriginCompMsgCount <- select(sparkData, countDistinct(sparkData$cat, sparkData$level, 
+                                                           sparkData$origin, sparkData$comp,
+                                                           sparkData$msg))
+head(levelCatOriginCompMsgCount)
