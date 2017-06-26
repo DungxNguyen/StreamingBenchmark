@@ -1,55 +1,111 @@
-Sys.setenv(SPARK_HOME="/opt/cloudera/parcels/CDH-5.5.1-1.cdh5.5.1.p0.11/lib/spark/");
-Sys.setenv(HADOOP_CONF_DIR="/etc/hive/conf");
-Sys.setenv(JAVA_HOME="/usr/java/default/");
-Sys.setenv(SPARK_SUBMIT_ARGS = "--master yarn-client sparkr-shell")
-.libPaths(c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib"), .libPaths()));
-library(SparkR);
 library(ggplot2)
 
-sc <- sparkR.session(appName="CyberStream Analysis R Studio", sparkConfig = list(
-  spark.yarn.queue = "data",
-  spark.network.timeout = "3600s",
-  spark.driver.maxResultSize = "16g",
-  spark.shuffle.service.enabled = "true",
-  spark.dynamicAllocation.enabled = "true",
-  spark.dynamicAllocation.maxExecutors = "1000",
-  spark.executor.cores = "3",
-  spark.executor.memory = "36g",
-  spark.r.driver.command = "/software/R-3.4.1/bin/Rscript",
-  spark.r.command = "/software/R-3.4.1/bin/Rscript",
-  #spark.executorEnv.PATH = "/opt/wakari/anaconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/software/py3/bin:/usr/bin",
-  #spark.r.use.daemon = "false",
-  #spark.sparkr.use.daemon = "false",
-  spark.r.heartBeatInterval = "3600s",
-  spark.executor.heartbeatInterval = "3600s"))
+# CONSTANT VARIABLES
 
-monthDataframe = read.df("/data/connected_drive_parquet/month=201705/dataset=b2vxfcdgwus")
+# Number of sample
+NUMBER_OF_SAMPLES <- 1000
 
-printSchema(monthDataframe)
 
-count = head(count(monthDataframe))
 
-groupedByDateCount = collect(count(groupBy(monthDataframe, "date")))
+# END OF CONSTANT VARIABLES
 
+
+
+sparkData <- NULL
+
+if(Sys.info()["sysname"] != "Linux") {
+  Sys.setenv(SPARK_HOME = "/opt/cloudera/parcels/CDH-5.5.1-1.cdh5.5.1.p0.11/lib/spark/")
+  Sys.setenv(HADOOP_CONF_DIR = "/etc/hive/conf")
+  Sys.setenv(JAVA_HOME = "/usr/java/default/")
+  Sys.setenv(SPARK_SUBMIT_ARGS = "--master yarn-client sparkr-shell")
+  .libPaths(c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib"), .libPaths()))
+  library(SparkR)
+  
+  sparkR.session(
+    appName = "CyberStream Analysis R Studio",
+    sparkConfig = list(
+      spark.yarn.queue = "data",
+      spark.network.timeout = "3600s",
+      spark.driver.maxResultSize = "16g",
+      spark.shuffle.service.enabled = "true",
+      spark.dynamicAllocation.enabled = "true",
+      spark.dynamicAllocation.maxExecutors = "1000",
+      spark.executor.cores = "3",
+      spark.executor.memory = "36g",
+      spark.r.driver.command = "/software/R-3.4.1/bin/Rscript",
+      spark.r.command = "/software/R-3.4.1/bin/Rscript",
+      #spark.executorEnv.PATH = "/opt/wakari/anaconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/software/py3/bin:/usr/bin",
+      #spark.r.use.daemon = "false",
+      #spark.sparkr.use.daemon = "false",
+      spark.r.heartBeatInterval = "3600s",
+      spark.executor.heartbeatInterval = "3600s"
+      )
+    )
+  
+  sparkData <- read.df("/data/connected_drive_parquet/month=201705/dataset=b2vxfcdgwus")
+  
+} else {
+  Sys.setenv(SPARK_HOME = "/home/dnguyen/spark-2.1.1-bin-hadoop2.7")
+  library(SparkR, lib.loc = c(file.path(Sys.getenv("SPARK_HOME"), "R", "lib")))
+  sparkR.session(master = "local[*]",
+                 sparkConfig = list(spark.driver.memory = "2g"))
+  
+  timestamp <-
+    sort(base::sample(
+      seq(
+        as.POSIXct("2017-01-01 00:00:00"),
+        as.POSIXct("2017-01-31 23:59:59"),
+        by = 1
+      ),
+      NUMBER_OF_SAMPLES,
+      replace = TRUE
+    ))
+  
+  head(timestamp)
+  
+  # Create R data frame
+  data <- data.frame(
+    id = 1:NUMBER_OF_SAMPLES,
+    timestamp = timestamp,
+    Date = as.Date(timestamp),
+    level = ifelse(runif(NUMBER_OF_SAMPLES) < 0.3, "ERROR", "WARN"),
+    cat = ifelse(runif(NUMBER_OF_SAMPLES) < 0.4, "APPLICATION", "WEB"),
+    invalid_vin = runif(NUMBER_OF_SAMPLES),
+    vehicle_id = runif(NUMBER_OF_SAMPLES)
+  )
+  
+  # Convert R dataframe to Spark DataFrame
+  sparkData <- as.DataFrame(data, numPartitions = 7)
+}
+
+# Schema: fields and their types
+printSchema(sparkData)
+
+# Count the number of records
+count = head(count(sparkData))
+count
+
+# Count the records by date
+groupedByDateCount = collect(count(groupBy(sparkData, "date")))
 byDateHistPlot <- ggplot(data = groupedByDateCount, aes(x = date, y = count))
 byDateHistPlot + geom_point() + geom_line() + geom_smooth() + ggtitle("Histogram By Day")
 
 # Count some distinct 
-distinctVin <- collect(select(monthDataframe, countDistinct(monthDataframe$invalid_vin)))
-distinctVehicle <- collect(select(monthDataframe, countDistinct(monthDataframe$vehicle_id)))
-distinctCat <- collect(select(monthDataframe, countDistinct(monthDataframe$cat)))
+distinctVin <- collect(select(sparkData, countDistinct(sparkData$invalid_vin)))
+distinctVehicle <- collect(select(sparkData, countDistinct(sparkData$vehicle_id)))
+distinctCat <- collect(select(sparkData, countDistinct(sparkData$cat)))
 
 # Get the distinct values of a colunm
-distinctCatValues <- collect(distinct(select(monthDataframe, "cat")))
+distinctCatValues <- collect(distinct(select(sparkData, "cat")))
 distinctCatValues
 
 # Get warning and error messages
-dataWarnError <- select(filter(monthDataframe, monthDataframe$level != "INFO"), "timestamp")
+dataWarnError <- select(filter(sparkData, sparkData$level != "INFO"), "timestamp")
 dataWarnErrorCount <- head(count(dataWarnError))
 dataWarnErrorSample <- head(dataWarnError, 10)
 
 # Get error messages
-dataError <- select(filter(monthDataframe, monthDataframe$level == "ERROR"), "*")
+dataError <- select(filter(sparkData, sparkData$level == "ERROR"), "*")
 dataErrorCount <- head(count(dataError))
 dataErrorSample <- head(dataError, 10)
 
@@ -85,3 +141,12 @@ hourDataInDay <- summarize(groupBy(dapply(dataWarnError, hourInDayConvert, hourS
 hourDataInDayR <- collect(hourDataInDay)
 names(hourDataInDayR) <- c("Hour", "Count")
 ggplot(data = hourDataInDayR, aes(x = Hour, y = Count)) + geom_bar(stat = "identity")
+
+# Number of combinations level x category
+levelCatCount <- select(sparkData, countDistinct(sparkData$cat, sparkData$level))
+head(levelCatCount)
+
+# List those combinations & Count the number of each combination between level and category
+levelCatCombinationCount <- count(groupBy(sparkData, "level", "cat"))
+levelCatCombinationCountDesc <- arrange(levelCatCombinationCount, desc(levelCatCombinationCount$count))
+head(levelCatCombinationCountDesc)
