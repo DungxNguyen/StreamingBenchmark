@@ -99,6 +99,9 @@ distinctCat <- collect(select(sparkData, countDistinct(sparkData$cat)))
 distinctCatValues <- collect(distinct(select(sparkData, "cat")))
 distinctCatValues
 
+# Count # each level
+levelCount <- head(count(groupBy(sparkData, "level")))
+
 # Get warning and error messages
 dataWarnError <- select(filter(sparkData, sparkData$level != "INFO"), "timestamp")
 dataWarnErrorCount <- head(count(dataWarnError))
@@ -177,3 +180,17 @@ levelCatOriginCompMsgCount <- select(sparkData, countDistinct(sparkData$cat, spa
                                                            sparkData$origin, sparkData$comp,
                                                            sparkData$msg))
 head(levelCatOriginCompMsgCount)
+
+# Count distint msg
+head(select(sparkData, countDistinct(sparkData$msg)))
+# Note: 300M records, 120M msg
+
+# Top mesg
+mesgCount <- count(groupBy(sparkData, "msg"))
+mesgCountSample <- head(arrange(mesgCount, desc(mesgCount$count)), num = 20)
+# 2 top mesg are 140M, each 74M and seems to be co-occur
+# 3-4-5 seems to be co-occur too
+
+# Top WARN/ERROR mesg
+mesgWARNCount <- count(groupBy(filter(sparkData, sparkData$level != "INFO"), "msg"))
+mesgWARNCountSample <- head(arrange(mesgWARNCount, desc(mesgWARNCount$count)), num = 20)
