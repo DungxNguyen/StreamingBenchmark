@@ -4,7 +4,8 @@ library(ggplot2)
 
 # Number of sample
 NUMBER_OF_SAMPLES <- 1000
-
+NUMBER_OF_VEHICLES <- 20
+NUMBER_OF_REQ <- 350
 
 
 # END OF CONSTANT VARIABLES
@@ -70,9 +71,12 @@ if(Sys.info()["user"] == "qxs0269") {
     Date = as.Date(timestamp),
     level = ifelse(runif(NUMBER_OF_SAMPLES) < 0.3, "ERROR", "WARN"),
     cat = ifelse(runif(NUMBER_OF_SAMPLES) < 0.4, "APPLICATION", "WEB"),
-    invalid_vin = runif(NUMBER_OF_SAMPLES),
-    vehicle_id = runif(NUMBER_OF_SAMPLES)
+    req = base::sample(NUMBER_OF_REQ, NUMBER_OF_SAMPLES, replace = TRUE),
+    msg = runif(NUMBER_OF_SAMPLES),
+    origin = runif(NUMBER_OF_SAMPLES)
   )
+  data$vehicle_id <- ((data$req * 100003 + 89513) %% 521) %% NUMBER_OF_VEHICLES + 1
+  data$invalid_vin <- data$vehicle_id * 95581 + 7583
   
   # Convert R dataframe to Spark DataFrame
   sparkData <- as.DataFrame(data, numPartitions = 7)
@@ -194,3 +198,25 @@ mesgCountSample <- head(arrange(mesgCount, desc(mesgCount$count)), num = 20)
 # Top WARN/ERROR mesg
 mesgWARNCount <- count(groupBy(filter(sparkData, sparkData$level != "INFO"), "msg"))
 mesgWARNCountSample <- head(arrange(mesgWARNCount, desc(mesgWARNCount$count)), num = 20)
+
+# Count number of vehicles
+vehicleCount <- head(select(sparkData, countDistinct(sparkData$vehicle_id)))
+vehicleCount
+
+# Count number of request
+requestCount <- head(select(sparkData, countDistinct(sparkData$req)))
+requestCount
+
+# Count number of request per vehicles
+requestPerVehicle <- collect(agg(groupBy(sparkData, "vehicle_id"), distinctReq = countDistinct(sparkData$req)))
+head(requestPerVehicle)
+
+# Some statistics about request/vehicles:
+summary(requestPerVehicle$distinctReq)
+sd(requestPerVehicle$distinctReq)
+ggplot(data=requestPerVehicle) + geom_histogram(aes(x = distinctReq))
+
+# Count records per request
+recordPerRequest <- agg(groupBy(sparkData, "req"), count = count(sparkData$id))
+recordStatistics <- collect(select(recordPerRequest, mean(recordPerRequest$count), sd(recordPerRequest$count)))
+recordStatistics
