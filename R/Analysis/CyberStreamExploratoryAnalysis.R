@@ -30,8 +30,8 @@ if(Sys.info()["user"] == "qxs0269") {
       spark.driver.maxResultSize = "16g",
       spark.shuffle.service.enabled = "true",
       spark.dynamicAllocation.enabled = "true",
-      spark.dynamicAllocation.maxExecutors = "1000",
-      spark.executor.cores = "4",
+      spark.dynamicAllocation.maxExecutors = "70",
+      spark.executor.cores = "3",
       spark.executor.memory = "24g",
       spark.r.driver.command = "/software/R-3.4.1/bin/Rscript",
       spark.r.command = "/software/R-3.4.1/bin/Rscript",
@@ -105,6 +105,7 @@ distinctCatValues
 
 # Count # each level
 levelCount <- head(count(groupBy(sparkData, "level")))
+levelCount
 
 # Get warning and error messages
 dataWarnError <- select(filter(sparkData, sparkData$level != "INFO"), "timestamp")
@@ -181,8 +182,8 @@ head(levelCatOriginCompCount)
 
 # Number of combinations level x category x origin x comp x msg
 levelCatOriginCompMsgCount <- select(sparkData, countDistinct(sparkData$cat, sparkData$level, 
-                                                           sparkData$origin, sparkData$comp,
-                                                           sparkData$msg))
+                                                              sparkData$origin, sparkData$comp,
+                                                              sparkData$msg))
 head(levelCatOriginCompMsgCount)
 
 # Count distint msg
@@ -200,15 +201,20 @@ mesgWARNCount <- count(groupBy(filter(sparkData, sparkData$level != "INFO"), "ms
 mesgWARNCountSample <- head(arrange(mesgWARNCount, desc(mesgWARNCount$count)), num = 20)
 
 # Count number of vehicles
-vehicleCount <- head(select(sparkData, countDistinct(sparkData$vehicle_id)))
+vehicleCount <- head(select(sparkData, countDistinct(sparkData$invalid_vin)))
 vehicleCount
+
+# Order vehicle by # of messages
+vehicleDistinct <- agg(groupBy(sparkData, "invalid_vin"), count = n(sparkData$id))
+vehicleDistinct <- arrange(vehicleDistinct, desc(vehicleDistinct$count))
+head(vehicleDistinct)
 
 # Count number of request
 requestCount <- head(select(sparkData, countDistinct(sparkData$req)))
 requestCount
 
 # Count number of request per vehicles
-requestPerVehicle <- collect(agg(groupBy(sparkData, "vehicle_id"), distinctReq = countDistinct(sparkData$req)))
+requestPerVehicle <- collect(agg(groupBy(sparkData, "invalid_vin"), distinctReq = countDistinct(sparkData$req)))
 head(requestPerVehicle)
 
 # Some statistics about request/vehicles:
@@ -220,3 +226,8 @@ ggplot(data=requestPerVehicle) + geom_histogram(aes(x = distinctReq))
 recordPerRequest <- agg(groupBy(sparkData, "req"), count = count(sparkData$id))
 recordStatistics <- collect(select(recordPerRequest, mean(recordPerRequest$count), sd(recordPerRequest$count)))
 recordStatistics
+
+# Count number of request per vehicles
+filteredSparkData <- filter(sparkData, sparkData$invalid_vin != "NA")
+requestPerVehicle <- agg(groupBy(filteredSparkData, "invalid_vin"), distinctReq = countDistinct(filteredSparkData$req))
+requestPerVehicleR <- collect(requestPerVehicle)
