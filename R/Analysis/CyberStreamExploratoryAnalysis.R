@@ -86,11 +86,11 @@ if(Sys.info()["user"] == "qxs0269") {
 printSchema(sparkData)
 
 # Count the number of records
-count = head(count(sparkData))
+count <- head(count(sparkData))
 count
 
 # Count the records by date
-groupedByDateCount = collect(count(groupBy(sparkData, "date")))
+groupedByDateCount <- collect(count(groupBy(sparkData, "date")))
 byDateHistPlot <- ggplot(data = groupedByDateCount, aes(x = date, y = count))
 byDateHistPlot + geom_point() + geom_line() + geom_smooth() + ggtitle("Histogram By Day")
 
@@ -200,7 +200,7 @@ mesgWARNCount <- count(groupBy(filter(sparkData, sparkData$level != "INFO"), "ms
 mesgWARNCountSample <- head(arrange(mesgWARNCount, desc(mesgWARNCount$count)), num = 20)
 
 # Count number of vehicles
-vehicleCount <- head(select(sparkData, countDistinct(sparkData$vehicle_id)))
+vehicleCount <- head(select(sparkData, countDistinct(sparkData$invalid_vin)))
 vehicleCount
 
 # Count number of request
@@ -208,7 +208,7 @@ requestCount <- head(select(sparkData, countDistinct(sparkData$req)))
 requestCount
 
 # Count number of request per vehicles
-requestPerVehicle <- collect(agg(groupBy(sparkData, "vehicle_id"), distinctReq = countDistinct(sparkData$req)))
+requestPerVehicle <- collect(agg(groupBy(sparkData, "invalid_vin"), distinctReq = countDistinct(sparkData$req)))
 head(requestPerVehicle)
 
 # Some statistics about request/vehicles:
