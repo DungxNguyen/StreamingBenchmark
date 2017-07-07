@@ -9,6 +9,7 @@ public class RecordTemplate {
 	public static final Random RANDOM = new Random();
 	private String level;
 	private String timestamp;
+	private String cat;
 
 	public static RecordTemplate genRandomData(int size) {
 		RecordTemplate record = new RecordTemplate();
@@ -35,5 +36,13 @@ public class RecordTemplate {
 
 	public void setTimestamp(String timestamp) {
 		this.timestamp = timestamp;
+	}
+
+	public String getCat() {
+		return cat;
+	}
+
+	public void setCat(String cat) {
+		this.cat = cat;
 	}
 }

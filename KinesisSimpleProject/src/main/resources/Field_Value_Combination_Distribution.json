@@ -1,0 +1,4 @@
+{
+	"{\"cat\":\"communication\", \"level\":\"warn\"}": 0.6,
+	"{\"cat\":\"application\", \"level\":\"info\"}": 0.4
+}

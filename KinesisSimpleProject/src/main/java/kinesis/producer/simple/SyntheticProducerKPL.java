@@ -21,12 +21,12 @@ public class SyntheticProducerKPL {
 	private int maxRecords; // The maximum number of records
 	private KinesisProducerConfiguration config;
 	private KinesisProducer kinesis;
-
+	
 	public static void main(String[] args)
 			throws UnsupportedEncodingException, InterruptedException, JsonProcessingException {
 		ProducerConfiguration config = new ProducerConfiguration();
 		config.setRate(5);
-		config.setDuration(300);
+		config.setDuration(3000);
 		config.setMaxRecords(0);
 		SyntheticProducerKPL testProducer = new SyntheticProducerKPL(config);
 		testProducer.execute();

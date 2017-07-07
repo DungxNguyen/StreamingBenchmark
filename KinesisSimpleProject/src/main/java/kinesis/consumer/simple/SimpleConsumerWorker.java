@@ -6,16 +6,21 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 
 public class SimpleConsumerWorker {
+	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleConsumerWorker.class);
+
 	
 	private static Map<String, Integer> logCount = new ConcurrentHashMap<String, Integer>();
 
-	public static void main(String[] args) throws UnknownHostException {
+	public static void main(String[] args) throws UnknownHostException, InterruptedException {
 		final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration("SimpleConsumer", "CoffeeStream",
 				new ProfileCredentialsProvider("default"),
 				InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID());
@@ -32,5 +37,9 @@ public class SimpleConsumerWorker {
 			return;
 		}
 		logCount.put(logType, count);
+	}
+	
+	public static void printLogCount(){
+		LOGGER.info(logCount.entrySet().toString());
 	}
 }

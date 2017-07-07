@@ -45,6 +45,7 @@ public class SimpleConsumerRecordProcessor implements IRecordProcessor {
 		for(Map.Entry<String, Integer> entry : logCount.entrySet()){
 			SimpleConsumerWorker.count(entry.getKey(), entry.getValue());
 		}
+		SimpleConsumerWorker.printLogCount();
 	}
 
 	@Override
