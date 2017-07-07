@@ -1,6 +1,5 @@
 package data.genenator;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 import org.slf4j.Logger;

@@ -7,7 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.slf4j.Logger;
@@ -24,7 +23,6 @@ public class DataGenerator {
 	private static final String FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE = "Field_Value_Combination_Distribution.json";
 
 	private DataGeneratorConfiguration config;
-	private Random mRandom;
 	private ExponentialDistribution mExponentialDistribution;
 	private DateFormat mDateFormat;
 	private FieldGenerator mFieldGenerator;
@@ -36,7 +34,6 @@ public class DataGenerator {
 	// Statistics
 	private int recordCounter;
 	private int realRate;
-	private double realaverageTimeGap;
 	private Map<String, Integer> combinationCount;
 
 	public DataGenerator(DataGeneratorConfiguration config) throws IOException {
@@ -47,7 +44,7 @@ public class DataGenerator {
 				new File(getClass().getClassLoader().getResource(FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE).getFile()),
 				HashMap.class));
 		mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		combinationCount =  new HashMap<String, Integer>();
+		combinationCount = new HashMap<String, Integer>();
 
 		// Calculate needed environment variables from config
 		calculateEnvironment();
@@ -56,7 +53,7 @@ public class DataGenerator {
 	private void calculateEnvironment() {
 		averageTimeGapBetween2Records = (double) 3600 * 1000 / (config.getRatePerHour() - 1);
 		mExponentialDistribution = new ExponentialDistribution(averageTimeGapBetween2Records);
-	
+
 	}
 
 	public void execute() throws IOException {

@@ -1,4 +1,6 @@
 {
-	"{\"cat\":\"communication\", \"level\":\"warn\"}": 0.6,
-	"{\"cat\":\"application\", \"level\":\"info\"}": 0.4
+	"{\"cat\":\"communication\", \"level\":\"warn\"}": 0.3,
+	"{\"cat\":\"application\", \"level\":\"info\"}": 0.3,
+	"{\"cat\":\"application\", \"level\":\"warn\"}": 0.25,
+	"{\"cat\":\"communication\", \"level\":\"info\"}": 0.15
 }
