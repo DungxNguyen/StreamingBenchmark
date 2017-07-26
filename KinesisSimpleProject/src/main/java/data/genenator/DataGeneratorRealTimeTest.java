@@ -5,18 +5,18 @@ import java.text.SimpleDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DataGeneratorTest {
+public class DataGeneratorRealTimeTest {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DataGeneratorTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DataGeneratorRealTimeTest.class);
 
 	public static void main(String[] args) throws Exception {
 		LOGGER.info("Data Generator Started");
 		DataGeneratorConfiguration config = new DataGeneratorConfiguration();
-		config.setRatePerHour(10);
-		config.setDuration(3600 * 100); // 100 hours x 3600 sec/hour
-		config.setStartTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2017-01-01 00:00:00").getTime());
+		config.setRatePerHour(Integer.valueOf(args[0])); // 3600 per hour = 1 per second
+		config.setDuration(Integer.valueOf(args[1])); // 60 seconds 
+		config.setStartTime(0);
 		DataGenerator mDataGenerator = new DataGenerator(config);
-		mDataGenerator.executeLocal();
+		mDataGenerator.executeKinesis();
 		LOGGER.info("Data Generator Finished");
 	}
 }

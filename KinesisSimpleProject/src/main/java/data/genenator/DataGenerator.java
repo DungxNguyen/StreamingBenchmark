@@ -2,16 +2,25 @@ package data.genenator;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.kinesis.producer.KinesisProducer;
+import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
+import com.amazonaws.services.kinesis.producer.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import kinesis.common.RecordTemplate;
@@ -21,6 +30,7 @@ public class DataGenerator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataGenerator.class);
 	private static final String DEFAULT_VALUE = "N/A";
 	private static final String FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE = "Field_Value_Combination_Distribution.json";
+	private static final String KINESIS_STREAM_NAME = "CoffeeStream";
 
 	private DataGeneratorConfiguration config;
 	private ExponentialDistribution mExponentialDistribution;
@@ -36,12 +46,12 @@ public class DataGenerator {
 	private int realRate;
 	private Map<String, Integer> combinationCount;
 
-	public DataGenerator(DataGeneratorConfiguration config) throws IOException {
+	public DataGenerator(DataGeneratorConfiguration config) throws IOException, URISyntaxException {
 		this.config = config;
 		// Initialize objects
 		mObjectMapper = new ObjectMapper();
 		mFieldGenerator = new FieldGenerator(mObjectMapper.readValue(
-				new File(getClass().getClassLoader().getResource(FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE).getFile()),
+				getClass().getClassLoader().getResourceAsStream(FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE),
 				HashMap.class));
 		mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		combinationCount = new HashMap<String, Integer>();
@@ -56,7 +66,8 @@ public class DataGenerator {
 
 	}
 
-	public void execute() throws IOException {
+	public void executeLocal() throws IOException {
+		LOGGER.info("Local Execute");
 		long timeCounter = config.getStartTime();
 		while (timeCounter <= config.getStartTime() + config.getDuration() * 1000) {
 			String formattedDate = mDateFormat.format(new Date(timeCounter));
@@ -78,6 +89,63 @@ public class DataGenerator {
 		LOGGER.info("Record Count: " + recordCounter);
 		LOGGER.info("Real Record Rate: " + realRate);
 		LOGGER.info("Combination Count: " + combinationCount.toString());
+	}
+
+	public void executeKinesis() throws IOException, InterruptedException, ExecutionException {
+		LOGGER.info("Kinesis Stream Execute");
+		
+		KinesisProducer kinesis = new KinesisProducer(new KinesisProducerConfiguration().setRegion("us-west-1").setAggregationEnabled(true));
+		config.setStartTime(System.currentTimeMillis());
+		
+		String randomString = RandomStringUtils.random(1024);
+
+		while (System.currentTimeMillis() <= config.getStartTime() + config.getDuration() * 1000) {
+			long windowsStartTime = System.currentTimeMillis();
+			// new Record Template
+			RecordTemplate record = new RecordTemplate();
+			Map<String, String> fieldValues = mFieldGenerator.genFieldValuePairs();
+			record.setLevel(fieldValues.getOrDefault("level", DEFAULT_VALUE));
+			record.setCat(fieldValues.getOrDefault("cat", DEFAULT_VALUE));
+			record.setTimestamp(mDateFormat.format(new Date(System.currentTimeMillis())));
+			record.setMsg(randomString);
+			record.setTime(System.currentTimeMillis());
+
+			// Send record to Kinesis Stream
+			kinesis.addUserRecord(KINESIS_STREAM_NAME, String.format("partitionKey-%d", windowsStartTime),
+					ByteBuffer.wrap(mObjectMapper.writeValueAsBytes(record)));
+
+			// Record to examine the settings:
+			recordCounter++;
+			
+			// Set up sleep time, expect each iteration has total time based on exponential dist
+			// with mean = average delay
+			Thread.sleep((long) mExponentialDistribution.sample() - windowsStartTime + System.currentTimeMillis());
+
+			// Count combination for data quality
+			// String combination =
+			// mObjectMapper.writeValueAsString(fieldValues);
+			// combinationCount.put(combination,
+			// combinationCount.getOrDefault(combination, 0) + 1);
+		}
+		calculateStatistics();
+		LOGGER.info("Record Count: " + recordCounter);
+		LOGGER.info("Real Record Rate(records per hour): " + realRate);
+		LOGGER.info("Real Record Rate(records per second): " + realRate / 3600);
+		// LOGGER.info("Combination Count: " + combinationCount.toString());
+		
+		waitKinesis(kinesis);
+		LOGGER.info("Producer metrics:" );
+		List<Metric> metrics = kinesis.getMetrics();
+		Collections.sort(metrics, (x, y) -> x.getName().compareToIgnoreCase(y.getName()));
+		for (Metric metric : metrics) {
+			if (!metric.getDimensions().containsKey("ShardId") &&
+				metric.getDimensions().containsKey("StreamName"))
+			LOGGER.info(metric.toString());
+		}
+	}
+	
+	private void waitKinesis(KinesisProducer kinesis){
+		kinesis.flushSync();
 	}
 
 	// Calculate some statistics to make sure the charisteristics of synthetic

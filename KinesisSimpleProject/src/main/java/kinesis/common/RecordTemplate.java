@@ -10,6 +10,16 @@ public class RecordTemplate {
 	private String level;
 	private String timestamp;
 	private String cat;
+	private String msg;
+	private long time;
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
 
 	public static RecordTemplate genRandomData(int size) {
 		RecordTemplate record = new RecordTemplate();
@@ -44,5 +54,13 @@ public class RecordTemplate {
 
 	public void setCat(String cat) {
 		this.cat = cat;
+	}
+
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
 	}
 }
