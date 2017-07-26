@@ -17,7 +17,6 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 public class SimpleConsumerWorker {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleConsumerWorker.class);
 
-	
 	private static Map<String, Integer> logCount = new ConcurrentHashMap<String, Integer>();
 
 	public static void main(String[] args) throws UnknownHostException, InterruptedException {
@@ -30,16 +29,16 @@ public class SimpleConsumerWorker {
 				.build();
 		worker.run();
 	}
-	
-	public static void count(String logType, int count){
-		if (logCount.containsKey(logType)){
+
+	public static void count(String logType, int count) {
+		if (logCount.containsKey(logType)) {
 			logCount.put(logType, logCount.get(logType) + count);
 			return;
 		}
 		logCount.put(logType, count);
 	}
-	
-	public static void printLogCount(){
+
+	public static void printLogCount() {
 		LOGGER.info(logCount.entrySet().toString());
 	}
 }

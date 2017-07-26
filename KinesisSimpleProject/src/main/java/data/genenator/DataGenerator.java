@@ -1,6 +1,5 @@
 package data.genenator;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -11,6 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang.RandomStringUtils;
@@ -31,12 +31,15 @@ public class DataGenerator {
 	private static final String DEFAULT_VALUE = "N/A";
 	private static final String FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE = "Field_Value_Combination_Distribution.json";
 	private static final String KINESIS_STREAM_NAME = "CoffeeStream";
+	private static final String METRICS_OUTPUT_FILENAME = "producer.csv";
 
 	private DataGeneratorConfiguration config;
 	private ExponentialDistribution mExponentialDistribution;
 	private DateFormat mDateFormat;
 	private FieldGenerator mFieldGenerator;
 	private ObjectMapper mObjectMapper;
+	private Random mRandom;
+	private long checkCode = 0;
 
 	// Environment
 	private double averageTimeGapBetween2Records; // in milliseconds
@@ -63,7 +66,7 @@ public class DataGenerator {
 	private void calculateEnvironment() {
 		averageTimeGapBetween2Records = (double) 3600 * 1000 / (config.getRatePerHour() - 1);
 		mExponentialDistribution = new ExponentialDistribution(averageTimeGapBetween2Records);
-
+		mRandom = new Random();
 	}
 
 	public void executeLocal() throws IOException {
@@ -93,12 +96,14 @@ public class DataGenerator {
 
 	public void executeKinesis() throws IOException, InterruptedException, ExecutionException {
 		LOGGER.info("Kinesis Stream Execute");
-		
-		KinesisProducer kinesis = new KinesisProducer(new KinesisProducerConfiguration().setRegion("us-west-1").setAggregationEnabled(true));
+
+		KinesisProducer kinesis = new KinesisProducer(
+				new KinesisProducerConfiguration().setRegion("us-west-1").setAggregationEnabled(true));
 		config.setStartTime(System.currentTimeMillis());
-		
+
 		String randomString = RandomStringUtils.random(1024);
 
+		int startId = 0;
 		while (System.currentTimeMillis() <= config.getStartTime() + config.getDuration() * 1000) {
 			long windowsStartTime = System.currentTimeMillis();
 			// new Record Template
@@ -108,16 +113,21 @@ public class DataGenerator {
 			record.setCat(fieldValues.getOrDefault("cat", DEFAULT_VALUE));
 			record.setTimestamp(mDateFormat.format(new Date(System.currentTimeMillis())));
 			record.setMsg(randomString);
+			record.setId(startId++);
 			record.setTime(System.currentTimeMillis());
 
 			// Send record to Kinesis Stream
 			kinesis.addUserRecord(KINESIS_STREAM_NAME, String.format("partitionKey-%d", windowsStartTime),
 					ByteBuffer.wrap(mObjectMapper.writeValueAsBytes(record)));
 
+			// Add the code
+			checkCode = record.getId();
+
 			// Record to examine the settings:
 			recordCounter++;
-			
-			// Set up sleep time, expect each iteration has total time based on exponential dist
+
+			// Set up sleep time, expect each iteration has total time based on exponential
+			// dist
 			// with mean = average delay
 			Thread.sleep((long) mExponentialDistribution.sample() - windowsStartTime + System.currentTimeMillis());
 
@@ -127,24 +137,55 @@ public class DataGenerator {
 			// combinationCount.put(combination,
 			// combinationCount.getOrDefault(combination, 0) + 1);
 		}
+
+		sendCheckingCode(kinesis, checkCode);
+
 		calculateStatistics();
 		LOGGER.info("Record Count: " + recordCounter);
 		LOGGER.info("Real Record Rate(records per hour): " + realRate);
 		LOGGER.info("Real Record Rate(records per second): " + realRate / 3600);
 		// LOGGER.info("Combination Count: " + combinationCount.toString());
-		
+
 		waitKinesis(kinesis);
-		LOGGER.info("Producer metrics:" );
+
+		// Create metrics
+		KinesisMetric kinesisMetrics = new KinesisMetric();
+		LOGGER.info("Producer metrics:");
 		List<Metric> metrics = kinesis.getMetrics();
 		Collections.sort(metrics, (x, y) -> x.getName().compareToIgnoreCase(y.getName()));
 		for (Metric metric : metrics) {
-			if (!metric.getDimensions().containsKey("ShardId") &&
-				metric.getDimensions().containsKey("StreamName"))
-			LOGGER.info(metric.toString());
+			if (!metric.getDimensions().containsKey("ShardId") && metric.getDimensions().containsKey("StreamName")) {
+				LOGGER.info(metric.toString());
+				if (metric.getName().equalsIgnoreCase("bufferingtime")) {
+					kinesisMetrics.bufferingTime = metric.getMean();
+				} else if (metric.getName().equalsIgnoreCase("allerrors")) {
+					kinesisMetrics.error = (int) metric.getSum();
+				} else if (metric.getName().equalsIgnoreCase("retriesperrecord")) {
+					kinesisMetrics.retriesPerRecord = metric.getMean();
+				} else if (metric.getName().equalsIgnoreCase("userrecordsdataput") ) {
+					kinesisMetrics.dataPerSecond = metric.getSum() / metric.getDuration() / 1024;
+				} else if (metric.getName().equalsIgnoreCase("userrecordsput")) {
+					kinesisMetrics.recordsPerSecond = metric.getSum() / metric.getDuration();
+					kinesisMetrics.recordsPerHour = kinesisMetrics.recordsPerSecond * 3600;
+				}
+			}
 		}
+		
+		kinesisMetrics.desiredRate = config.getRatePerHour();
+		kinesisMetrics.recordNumber = recordCounter;
+		kinesisMetrics.appendToFile(METRICS_OUTPUT_FILENAME);
 	}
-	
-	private void waitKinesis(KinesisProducer kinesis){
+
+	private void sendCheckingCode(KinesisProducer kinesis, long checkCode) throws IOException {
+		RecordTemplate record = new RecordTemplate();
+		record.setMsg(String.valueOf(checkCode));
+		record.setCat("CHECKCODE");
+		kinesis.addUserRecord(KINESIS_STREAM_NAME, String.format("partitionKey-%d", System.currentTimeMillis()),
+				ByteBuffer.wrap(mObjectMapper.writeValueAsBytes(record)));
+		LOGGER.info("Send checkcode:" + checkCode);
+	}
+
+	private void waitKinesis(KinesisProducer kinesis) {
 		kinesis.flushSync();
 	}
 

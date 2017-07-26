@@ -13,38 +13,37 @@ public class LambdaInvokeTest {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
-//		final TestLambdaService testLambdaService = LambdaInvokerFactory.builder()
-//				 .lambdaClient(AWSLambdaClientBuilder.defaultClient())
-//				 .build(TestLambdaService.class);
-//		
-//		System.out.println(testLambdaService.hello("AWS Lambda World"));
+		// final TestLambdaService testLambdaService = LambdaInvokerFactory.builder()
+		// .lambdaClient(AWSLambdaClientBuilder.defaultClient())
+		// .build(TestLambdaService.class);
+		//
+		// System.out.println(testLambdaService.hello("AWS Lambda World"));
 		LambdaInvokeTest test = new LambdaInvokeTest();
 		test.runTest();
 	}
-	
-	public void runTest(){
+
+	public void runTest() {
 		ProducerConfiguration producerConfiguration = new ProducerConfiguration();
 		producerConfiguration.setDuration(DURATION_OF_RUNNING);
 		producerConfiguration.setRate(RATE);
 		LambdaInvokeTestThread[] threads = new LambdaInvokeTestThread[NUMBER_OF_THREADS];
-		for( int i = 0; i < NUMBER_OF_THREADS; i++ ){
+		for (int i = 0; i < NUMBER_OF_THREADS; i++) {
 			threads[i] = new LambdaInvokeTestThread();
 			threads[i].setProducerConfiguration(producerConfiguration);
-			Thread t = new Thread( threads[i] );
+			Thread t = new Thread(threads[i]);
 			t.start();
 		}
 	}
-	
-	class LambdaInvokeTestThread implements Runnable{
+
+	class LambdaInvokeTestThread implements Runnable {
 		private ProducerConfiguration producerConfiguration;
 
 		@Override
 		public void run() {
-		final TestLambdaService testLambdaService = LambdaInvokerFactory.builder()
-				 .lambdaClient(AWSLambdaClientBuilder.defaultClient())
-				 .build(TestLambdaService.class);
-		
-		testLambdaService.executeProducer(getProducerConfiguration());
+			final TestLambdaService testLambdaService = LambdaInvokerFactory.builder()
+					.lambdaClient(AWSLambdaClientBuilder.defaultClient()).build(TestLambdaService.class);
+
+			testLambdaService.executeProducer(getProducerConfiguration());
 		}
 
 		public ProducerConfiguration getProducerConfiguration() {

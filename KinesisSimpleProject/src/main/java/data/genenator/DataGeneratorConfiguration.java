@@ -8,18 +8,23 @@ public class DataGeneratorConfiguration {
 	public int getRatePerHour() {
 		return ratePerHour;
 	}
+
 	public void setRatePerHour(int ratePerHour) {
 		this.ratePerHour = ratePerHour;
 	}
+
 	public int getDuration() {
 		return duration;
 	}
+
 	public void setDuration(int duration) {
 		this.duration = duration;
 	}
+
 	public long getStartTime() {
 		return startTime;
 	}
+
 	public void setStartTime(long startTime) {
 		this.startTime = startTime;
 	}

@@ -5,9 +5,15 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcess
 
 public class BenchmarkConsumerRecordProcessorFactory implements IRecordProcessorFactory {
 
+	private BenchmarkConsumerWorker worker;
+
+	public BenchmarkConsumerRecordProcessorFactory(BenchmarkConsumerWorker worker) {
+		this.worker = worker;
+	}
+
 	@Override
 	public IRecordProcessor createProcessor() {
-		return new BenchmarkConsumerRecordProcessor();
+		return new BenchmarkConsumerRecordProcessor(worker);
 	}
 
 }

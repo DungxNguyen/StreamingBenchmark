@@ -28,11 +28,11 @@ public class SimpleConsumerRecordProcessor implements IRecordProcessor {
 		LOGGER.info("Process: " + arg0.getRecords().size());
 		Map<String, Integer> logCount = new HashMap<String, Integer>();
 		ObjectMapper objectMapper = new ObjectMapper();
-		for( com.amazonaws.services.kinesis.model.Record rawRecord : arg0.getRecords() ){
+		for (com.amazonaws.services.kinesis.model.Record rawRecord : arg0.getRecords()) {
 			LOGGER.info("Record: " + new String(rawRecord.getData().array()));
 			try {
 				RecordTemplate record = objectMapper.readValue(rawRecord.getData().array(), RecordTemplate.class);
-				if (logCount.containsKey(record.getLevel())){
+				if (logCount.containsKey(record.getLevel())) {
 					logCount.put(record.getLevel(), logCount.get(record.getLevel()) + 1);
 				} else {
 					logCount.put(record.getLevel(), 1);
@@ -42,7 +42,7 @@ public class SimpleConsumerRecordProcessor implements IRecordProcessor {
 				e.printStackTrace();
 			}
 		}
-		for(Map.Entry<String, Integer> entry : logCount.entrySet()){
+		for (Map.Entry<String, Integer> entry : logCount.entrySet()) {
 			SimpleConsumerWorker.count(entry.getKey(), entry.getValue());
 		}
 		SimpleConsumerWorker.printLogCount();

@@ -14,9 +14,9 @@ public class FieldGenerator {
 	private Map<Integer, String> probabilityMap;
 	private List<Double> probabilityPoint;
 	private Random mRandom;
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(FieldGenerator.class);
-	
+
 	public FieldGenerator(Map<String, Double> combinationDistributionTable) {
 		this.combinationDistributionTable = combinationDistributionTable;
 		mRandom = new Random();
@@ -32,7 +32,7 @@ public class FieldGenerator {
 		int counter = 0;
 		double currentProbabilityPoint = 0.0;
 		probabilityPoint.add(counter, currentProbabilityPoint);
-		for (String combination: combinationDistributionTable.keySet()){
+		for (String combination : combinationDistributionTable.keySet()) {
 			currentProbabilityPoint += combinationDistributionTable.get(combination);
 			probabilityMap.put(counter, combination);
 			probabilityPoint.add(++counter, currentProbabilityPoint);
@@ -45,8 +45,7 @@ public class FieldGenerator {
 
 	private int getRange(double prob) {
 		for (int i = 0; i < probabilityPoint.size() - 1; i++) {
-			if (prob >= probabilityPoint.get(i) &&
-					prob < probabilityPoint.get(i + 1)) {
+			if (prob >= probabilityPoint.get(i) && prob < probabilityPoint.get(i + 1)) {
 				return i;
 			}
 		}

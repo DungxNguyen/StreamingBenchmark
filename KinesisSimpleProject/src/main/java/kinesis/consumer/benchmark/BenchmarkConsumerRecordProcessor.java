@@ -18,8 +18,14 @@ import kinesis.common.RecordTemplate;
 public class BenchmarkConsumerRecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerRecordProcessor.class);
 
+	private BenchmarkConsumerWorker worker;
+
 	boolean start = false;
 	ObjectMapper objectMapper = new ObjectMapper();
+
+	public BenchmarkConsumerRecordProcessor(BenchmarkConsumerWorker worker) {
+		this.worker = worker;
+	}
 
 	@Override
 	public void initialize(InitializationInput arg0) {
@@ -38,6 +44,12 @@ public class BenchmarkConsumerRecordProcessor implements IRecordProcessor {
 					BenchmarkConsumerWorker.setStartingTime();
 					start = true;
 				}
+				if (record.getCat().equals("CHECKCODE")) {
+					LOGGER.info("Receive CheckCode: " + record.getMsg());
+					worker.processCheckCode(Long.valueOf(record.getMsg()));
+				} else {
+					worker.addId(record.getId());
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -48,7 +60,6 @@ public class BenchmarkConsumerRecordProcessor implements IRecordProcessor {
 	@Override
 	public void shutdown(ShutdownInput arg0) {
 		// TODO Auto-generated method stub
-
 	}
 
 }

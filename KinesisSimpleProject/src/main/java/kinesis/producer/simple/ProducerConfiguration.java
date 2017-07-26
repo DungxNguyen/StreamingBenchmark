@@ -5,12 +5,12 @@ public class ProducerConfiguration {
 	private int rate;
 	private int maxRecords;
 
-	public ProducerConfiguration(){
+	public ProducerConfiguration() {
 		setDuration(10);
 		setRate(100);
 		setMaxRecords(0);
 	}
-	
+
 	public int getDuration() {
 		return duration;
 	}
@@ -22,8 +22,8 @@ public class ProducerConfiguration {
 	public void setRate(int rate) {
 		this.rate = rate;
 	}
-	
-	public int getRate(){
+
+	public int getRate() {
 		return rate;
 	}
 

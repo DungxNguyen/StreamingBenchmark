@@ -11,6 +11,7 @@ public class RecordTemplate {
 	private String timestamp;
 	private String cat;
 	private String msg;
+	private int id;
 	private long time;
 
 	public long getTime() {
@@ -23,9 +24,9 @@ public class RecordTemplate {
 
 	public static RecordTemplate genRandomData(int size) {
 		RecordTemplate record = new RecordTemplate();
-		if (RANDOM.nextInt(3) != 0){
+		if (RANDOM.nextInt(3) != 0) {
 			record.setLevel("INFO");
-		}else{
+		} else {
 			record.setLevel("WARN");
 		}
 		record.setTimestamp(SDF.format(new Date(System.currentTimeMillis())));
@@ -62,5 +63,13 @@ public class RecordTemplate {
 
 	public void setMsg(String msg) {
 		this.msg = msg;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 }

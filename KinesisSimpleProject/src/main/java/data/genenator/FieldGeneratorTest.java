@@ -18,9 +18,11 @@ public class FieldGeneratorTest {
 	private static final String FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE = "Field_Value_Combination_Distribution.json";
 
 	public static void main(String[] args) throws IOException {
-		Map<String, Double> combinationDistributionTable = M_OBJECT_MAPPER.readValue(new File(FieldGeneratorTest.class
-				.getClassLoader().getResource(FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE).getFile()), 
-				new TypeReference<Map<String, Double>>(){});
+		Map<String, Double> combinationDistributionTable = M_OBJECT_MAPPER.readValue(
+				new File(FieldGeneratorTest.class.getClassLoader()
+						.getResource(FIELD_VALUE_COMBINATION_DISTRIBUTION_FILE).getFile()),
+				new TypeReference<Map<String, Double>>() {
+				});
 		// Map<String, Double> combinationDistributionTable = new
 		// HashMap<String, Double>();
 		// combinationDistributionTable.put("{\"cat\":\"application\",

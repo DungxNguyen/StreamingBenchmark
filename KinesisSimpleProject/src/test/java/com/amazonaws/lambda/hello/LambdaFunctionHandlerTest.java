@@ -13,31 +13,31 @@ import com.amazonaws.services.lambda.runtime.Context;
  */
 public class LambdaFunctionHandlerTest {
 
-    private static Object input;
+	private static Object input;
 
-    @BeforeClass
-    public static void createInput() throws IOException {
-        // TODO: set up your sample input object here.
-        input = null;
-    }
+	@BeforeClass
+	public static void createInput() throws IOException {
+		// TODO: set up your sample input object here.
+		input = null;
+	}
 
-    private Context createContext() {
-        TestContext ctx = new TestContext();
+	private Context createContext() {
+		TestContext ctx = new TestContext();
 
-        // TODO: customize your context here if needed.
-        ctx.setFunctionName("Your Function Name");
+		// TODO: customize your context here if needed.
+		ctx.setFunctionName("Your Function Name");
 
-        return ctx;
-    }
+		return ctx;
+	}
 
-    @Test
-    public void testLambdaFunctionHandler() {
-        LambdaFunctionHandler handler = new LambdaFunctionHandler();
-        Context ctx = createContext();
+	@Test
+	public void testLambdaFunctionHandler() {
+		LambdaFunctionHandler handler = new LambdaFunctionHandler();
+		Context ctx = createContext();
 
-//        String output = handler.handleRequest(input, ctx);
+		// String output = handler.handleRequest(input, ctx);
 
-        // TODO: validate output here if needed.
-//        Assert.assertEquals("Hello from Lambda!", output);
-    }
+		// TODO: validate output here if needed.
+		// Assert.assertEquals("Hello from Lambda!", output);
+	}
 }
