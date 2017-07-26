@@ -38,7 +38,6 @@ public class BenchmarkConsumerRecordProcessor implements IRecordProcessor {
 			try {
 				byte[] data = rawRecord.getData().array();
 				RecordTemplate record = objectMapper.readValue(data, RecordTemplate.class);
-				BenchmarkConsumerWorker.addLatency(System.currentTimeMillis() - record.getTime());
 				BenchmarkConsumerWorker.addCapacity(data.length);
 				if (!start) {
 					BenchmarkConsumerWorker.setStartingTime();
@@ -49,6 +48,7 @@ public class BenchmarkConsumerRecordProcessor implements IRecordProcessor {
 					worker.processCheckCode(Long.valueOf(record.getMsg()));
 				} else {
 					worker.addId(record.getId());
+					BenchmarkConsumerWorker.addLatency(System.currentTimeMillis() - record.getTime());
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

@@ -22,8 +22,8 @@ public class BenchmarkConsumerWorker implements Runnable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerWorker.class);
 	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 30;
 	private static final String CONSUMER_METRICS_FILENAME = "consumer.csv";
-	private static final long DURATION_START = System.currentTimeMillis();
 
+	private static  long DURATION_START = System.currentTimeMillis();
 	private static List<Long> latency = Collections.synchronizedList(new CopyOnWriteArrayList<Long>());
 	private static List<Integer> capacity = Collections.synchronizedList(new CopyOnWriteArrayList<Integer>());
 	private static long startingTime;
@@ -75,7 +75,7 @@ public class BenchmarkConsumerWorker implements Runnable {
 		int size = latency.size();
 		double mlatency = (double) latency.stream().mapToLong(Long::longValue).sum() / size;
 		latency.clear();
-		if (mlatency != 0) {
+		if (mlatency != 0 && !Double.isNaN(mlatency)) {
 			metrics.latency.add(mlatency);
 		}
 		return mlatency;
@@ -95,6 +95,8 @@ public class BenchmarkConsumerWorker implements Runnable {
 	public static void setStartingTime() {
 		if (startingTime == 0) {
 			startingTime = System.currentTimeMillis();
+			DURATION_START = startingTime;
+			LOGGER.info("DURATION_START: Start receiving records");
 		}
 	}
 
@@ -170,5 +172,9 @@ public class BenchmarkConsumerWorker implements Runnable {
 		}
 		metrics.time = (int)(System.currentTimeMillis() - DURATION_START) / 1000;
 		metrics.appendToFile(CONSUMER_METRICS_FILENAME);
+	}
+
+	public boolean genRunningStatus() {
+		return running;
 	}
 }

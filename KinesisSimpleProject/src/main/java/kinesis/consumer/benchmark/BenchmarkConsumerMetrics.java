@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BenchmarkConsumerMetrics {
+	String experimentName;
 	int time;
 	int numberOfApplications;
 	List<Double> latency = new ArrayList<Double>();
@@ -20,7 +21,7 @@ public class BenchmarkConsumerMetrics {
 		if (!file.exists()) {
 			file.createNewFile();
 			PrintWriter mPrintStream = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-			mPrintStream.println("Number of Applications, Duration, All Received?, Latency Average, Latency SD, Latency Max, Latency Min, "
+			mPrintStream.println("Experiment Name, Number of Applications, Duration, All Received?, Latency Average, Latency SD, Latency Max, Latency Min, "
 					+ "Thoughput Average, Thoughput SD, Thoughput Max, Throughput Min");
 			printMetric(mPrintStream);
 			mPrintStream.close();
@@ -34,6 +35,7 @@ public class BenchmarkConsumerMetrics {
 	
 	private void printMetric(PrintWriter mPrintWriter) {
 		StringBuilder str = new StringBuilder();
+		str.append(experimentName + ", ");
 		str.append(numberOfApplications + ", ");
 		str.append(time + ", ");
 		str.append(allReceived + ", ");

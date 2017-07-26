@@ -9,17 +9,18 @@ public class BenchmarkConsumerWorkgroup {
 	private int numberOfApplications;
 	private BenchmarkConsumerWorker[] workers;
 
-	public BenchmarkConsumerWorkgroup(int numberOfApplications) {
+	public BenchmarkConsumerWorkgroup(String experimentName, int numberOfApplications) {
 		this.numberOfApplications = numberOfApplications;
 		workers = new BenchmarkConsumerWorker[numberOfApplications];
 		for (int i = 0; i < numberOfApplications; i++) {
 			workers[i] = new BenchmarkConsumerWorker("Benchmark" + i);
 		}
 		BenchmarkConsumerWorker.metrics.numberOfApplications = numberOfApplications;
+		BenchmarkConsumerWorker.metrics.experimentName = experimentName;
 	}
 
 	public static void main(String[] args) {
-		BenchmarkConsumerWorkgroup workgroup = new BenchmarkConsumerWorkgroup(Integer.valueOf(args[0]));
+		BenchmarkConsumerWorkgroup workgroup = new BenchmarkConsumerWorkgroup(args[0], Integer.valueOf(args[1]));
 		workgroup.execute();
 		new Thread(new Runnable() {
 			@Override
@@ -50,8 +51,18 @@ public class BenchmarkConsumerWorkgroup {
 	private boolean checkComplete() {
 		boolean check = true;
 		for (int i = 0; i < numberOfApplications; i++) {
-			if (workers[i].checkCode()) {
-				LOGGER.info("Application " + i + " check code successfully");
+			// if (workers[i].checkCode()) {
+			// LOGGER.info("Application " + i + " check code successfully");
+			// } else if (!workers[i].genRunningStatus()){
+			// LOGGER.info("Application " + i + " check code failed.");
+			// } else {
+			// check = false;
+			// }
+			if (!workers[i].genRunningStatus()) {
+				if (workers[i].checkCode())
+					LOGGER.info("Application " + i + " check code successfully");
+				else
+					LOGGER.info("Application " + i + " check code failed.");
 			} else {
 				check = false;
 			}

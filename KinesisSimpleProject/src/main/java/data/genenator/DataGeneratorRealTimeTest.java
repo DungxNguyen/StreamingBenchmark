@@ -10,8 +10,9 @@ public class DataGeneratorRealTimeTest {
 	public static void main(String[] args) throws Exception {
 		LOGGER.info("Data Generator Started");
 		DataGeneratorConfiguration config = new DataGeneratorConfiguration();
-		config.setRatePerHour(Integer.valueOf(args[0])); // 3600 per hour = 1 per second
-		config.setDuration(Integer.valueOf(args[1])); // 60 seconds
+		config.setConfigName(args[0]);
+		config.setRatePerHour(Integer.valueOf(args[1])); // 3600 per hour = 1 per second
+		config.setDuration(Integer.valueOf(args[2])); // 60 seconds
 		config.setStartTime(0);
 		DataGenerator mDataGenerator = new DataGenerator(config);
 		mDataGenerator.executeKinesis();

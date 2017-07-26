@@ -173,6 +173,7 @@ public class DataGenerator {
 		
 		kinesisMetrics.desiredRate = config.getRatePerHour();
 		kinesisMetrics.recordNumber = recordCounter;
+		kinesisMetrics.experimentName = config.getConfigName();
 		kinesisMetrics.appendToFile(METRICS_OUTPUT_FILENAME);
 	}
 

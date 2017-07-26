@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 public class KinesisMetric {
+	public String experimentName;
 	public int desiredRate;
 	public int recordNumber;
 	public int error;
@@ -22,13 +23,13 @@ public class KinesisMetric {
 			file.createNewFile();
 			PrintWriter mPrintStream = new PrintWriter(new BufferedWriter(new FileWriter(file)));
 			mPrintStream.println(
-					"Desired Rate, Records, Errors, Buffering Time, Retries Per Second, Records Per Second, Records Per Hour, Thoughput");
-			mPrintStream.println(desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
+					"Experiment Name, Desired Rate, Records, Errors, Buffering Time, Retries Per Second, Records Per Second, Records Per Hour, Thoughput");
+			mPrintStream.println(experimentName + ", " + desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
 					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond);
 			mPrintStream.close();
 		} else {
 			PrintWriter mPrintStream = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
-			mPrintStream.println(desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
+			mPrintStream.println(experimentName + ", " + desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
 					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond);
 			mPrintStream.close();
 		}
