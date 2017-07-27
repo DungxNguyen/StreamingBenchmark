@@ -65,6 +65,7 @@ public class DataGenerator {
 
 	private void calculateEnvironment() {
 		averageTimeGapBetween2Records = (double) 3600 * 1000 / (config.getRatePerHour() - 1);
+		LOGGER.info("Average Gap: " + averageTimeGapBetween2Records);
 		mExponentialDistribution = new ExponentialDistribution(averageTimeGapBetween2Records);
 		mRandom = new Random();
 	}
@@ -138,6 +139,7 @@ public class DataGenerator {
 			// combinationCount.getOrDefault(combination, 0) + 1);
 		}
 
+		waitKinesis(kinesis);
 		sendCheckingCode(kinesis, checkCode);
 
 		calculateStatistics();

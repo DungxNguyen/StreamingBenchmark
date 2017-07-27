@@ -20,7 +20,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 
 public class BenchmarkConsumerWorker implements Runnable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerWorker.class);
-	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 30;
+	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 60;
 	private static final String CONSUMER_METRICS_FILENAME = "consumer.csv";
 
 	private static  long DURATION_START = System.currentTimeMillis();
