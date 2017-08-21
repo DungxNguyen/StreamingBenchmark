@@ -99,7 +99,12 @@ public class DataGenerator {
 		LOGGER.info("Kinesis Stream Execute");
 
 		KinesisProducer kinesis = new KinesisProducer(
-				new KinesisProducerConfiguration().setRegion("us-west-1").setAggregationEnabled(true));
+				new KinesisProducerConfiguration().
+				setRegion("us-west-1").
+				setAggregationEnabled(true).
+//				setRecordTtl(9223372036854775807L));
+				setRecordTtl(3600000000L));
+		
 		config.setStartTime(System.currentTimeMillis());
 
 		String randomString = RandomStringUtils.random(1024);

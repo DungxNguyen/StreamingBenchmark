@@ -3,41 +3,57 @@ package data.genenator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import kinesis.stream.manager.KinesisStreamUtils;
+
 public class KinesisTestSuite {
 
 	private static final long WAITING_TIME = 60000;
-	private static final long EXPERIMENT_TIME_OUT = 10 * 60 * 1000; // 10 min * 60s/min * 1000 ms/s
+	private static final long EXPERIMENT_TIME_OUT = 200 * 60 * 1000; // 200 min * 60s/min * 1000 ms/s
 	private static final String SSH_COMMAND = "ssh ec2-user@";
-	private static final String PRODUCER_IP = "54.183.247.57";
-	private static final String CONSUMER_IP = "54.183.248.111";
+	private static final String PRODUCER_IP = "107.23.226.179";
+	private static final String CONSUMER_IP = "34.229.224.28";
 	private static final String CONSUMER_COMMAND = " java -cp hello-1.0.0.jar kinesis.consumer.benchmark.BenchmarkConsumerWorkgroup";
 	private static final String PRODUCER_COMMAND = " java -cp hello-1.0.0.jar data.genenator.DataGeneratorRealTimeTest";
 	private static final String CLEAN_COMMAND = " killall java";
 	private static final int PRODUCER_DURATION = 60;
 	private static final int NUMBER_OF_SHARDS = 32;
+	private static final int[] EXPERIMENTS = new int[] { 1, 2, 4, 8, 16, 32, 64 };
+	private static final int[] LIST_SHARDS = new int[] { 1, 2, 4, 8, 16, 32 };
 	private static final int NUMBER_OF_CONSUMER_APPLICATION = 1;
 	private static final int MAX_RATE_PER_SHARD = 1000000;
+	// private static final int NUMBER_OF_EXPERIMENT = 1;
+	private static final boolean TEST_PRODUCER_ONLY = false;
 
 	public static void main(String args[]) throws InterruptedException {
-		for (int i = 1; i <= 10; i++) {
-			int desiredRate = MAX_RATE_PER_SHARD * NUMBER_OF_SHARDS * i / 10;
+		// for (int i = NUMBER_OF_EXPERIMENT; i >= 1; i--) {
+		// int desiredRate = MAX_RATE_PER_SHARD * NUMBER_OF_SHARDS * i /
+		// NUMBER_OF_EXPERIMENT;
+		for (int shards : LIST_SHARDS) {
+			for (int exp : EXPERIMENTS) {
+				int desiredRate = MAX_RATE_PER_SHARD * NUMBER_OF_SHARDS / exp;
 
-			StringBuilder consumerParams = new StringBuilder();// " testSuite 1";
-			StringBuilder producerParams = new StringBuilder();// " testSuite 36000 10";
-			String experimentNames = NUMBER_OF_SHARDS + "-" + NUMBER_OF_CONSUMER_APPLICATION + "-" + desiredRate;
+				StringBuilder consumerParams = new StringBuilder();// " testSuite 1";
+				StringBuilder producerParams = new StringBuilder();// " testSuite 36000 10";
+				String experimentNames = args[0] + "-" + shards + "-" + NUMBER_OF_CONSUMER_APPLICATION + "-" + desiredRate;
 
-			consumerParams.append(" ");
-			consumerParams.append(experimentNames);
-			consumerParams.append(" ");
-			consumerParams.append(NUMBER_OF_CONSUMER_APPLICATION);
+				consumerParams.append(" ");
+				consumerParams.append(experimentNames);
+				consumerParams.append(" ");
+				consumerParams.append(NUMBER_OF_CONSUMER_APPLICATION);
 
-			producerParams.append(" ");
-			producerParams.append(experimentNames + " ");
-			producerParams.append(desiredRate + " ");
-			producerParams.append(PRODUCER_DURATION);
+				producerParams.append(" ");
+				producerParams.append(experimentNames + " ");
+				producerParams.append(desiredRate + " ");
+				producerParams.append(PRODUCER_DURATION);
 
-			experiment(consumerParams.toString(), producerParams.toString());
+				KinesisStreamUtils.deleteStream("CoffeeStream", 300000);
+				KinesisStreamUtils.createStream("CoffeeStream", shards, 300000);
+				experiment(consumerParams.toString(), producerParams.toString());
+			}
+
 		}
+		process("rsync -prvz ec2-user@" + PRODUCER_IP + ":producer.csv /home/dnguyen/Dropbox/producer.csv");
+		process("rsync -prvz ec2-user@" + CONSUMER_IP + ":consumer.csv /home/dnguyen/Dropbox/consumer.csv");
 	}
 
 	public static void experiment(String consumerParams, String producerParams) throws InterruptedException {
@@ -64,17 +80,24 @@ public class KinesisTestSuite {
 		});
 		guard.start();
 
-		// Start consumer
-		consumerThread.start();
+		if (!TEST_PRODUCER_ONLY) {
+			// Start consumer
+			consumerThread.start();
 
-		// Wait for consumer ready
-		Thread.sleep(WAITING_TIME);
+			// Wait for consumer ready
+			Thread.sleep(WAITING_TIME);
+		}
 
 		// Start producer
 		producerThread.start();
 
+		// Wait for consumer and producer to finish
 		producerThread.join();
-		consumerThread.join();
+
+		if (!TEST_PRODUCER_ONLY) {
+			consumerThread.join();
+		}
+
 		guard.interrupt();
 	}
 
