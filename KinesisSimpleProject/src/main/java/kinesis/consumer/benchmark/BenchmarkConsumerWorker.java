@@ -18,12 +18,14 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcess
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 
+import data.genenator.KinesisTestSuite;
+
 public class BenchmarkConsumerWorker implements Runnable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerWorker.class);
 	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 60;
 	private static final String CONSUMER_METRICS_FILENAME = "consumer.csv";
 
-	private static  long DURATION_START = System.currentTimeMillis();
+	private static long DURATION_START = System.currentTimeMillis();
 	private static List<Long> latency = Collections.synchronizedList(new CopyOnWriteArrayList<Long>());
 	private static List<Integer> capacity = Collections.synchronizedList(new CopyOnWriteArrayList<Integer>());
 	private static long startingTime;
@@ -42,8 +44,8 @@ public class BenchmarkConsumerWorker implements Runnable {
 
 	public void execute() throws UnknownHostException {
 		running = true;
-		final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(applicationName, "CoffeeStream",
-				new ProfileCredentialsProvider("default"),
+		final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(applicationName,
+				KinesisTestSuite.STREAM_NAME, new ProfileCredentialsProvider("default"),
 				InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID());
 		config.withRegionName("us-west-1");
 		final IRecordProcessorFactory recordProcessorFactory = new BenchmarkConsumerRecordProcessorFactory(this);
@@ -170,7 +172,7 @@ public class BenchmarkConsumerWorker implements Runnable {
 			LOGGER.info("Messeages LOST");
 			metrics.allReceived = false;
 		}
-		metrics.time = (int)(System.currentTimeMillis() - DURATION_START) / 1000;
+		metrics.time = (int) (System.currentTimeMillis() - DURATION_START) / 1000;
 		metrics.appendToFile(CONSUMER_METRICS_FILENAME);
 	}
 

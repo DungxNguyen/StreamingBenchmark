@@ -16,7 +16,7 @@ public class DataGeneratorTest {
 		config.setDuration(3600 * 100); // 100 hours x 3600 sec/hour
 		config.setStartTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2017-01-01 00:00:00").getTime());
 		DataGenerator mDataGenerator = new DataGenerator(config);
-		mDataGenerator.executeLocal();
+//		mDataGenerator.executeLocal();
 		LOGGER.info("Data Generator Finished");
 	}
 }

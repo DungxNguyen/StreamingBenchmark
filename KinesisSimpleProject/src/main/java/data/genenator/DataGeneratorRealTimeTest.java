@@ -14,6 +14,8 @@ public class DataGeneratorRealTimeTest {
 		config.setRatePerHour(Integer.valueOf(args[1])); // 3600 per hour = 1 per second
 		config.setDuration(Integer.valueOf(args[2])); // 60 seconds
 		config.setStartTime(0);
+		config.setGap(Integer.valueOf(args[3]));
+		config.setBlock(Integer.valueOf(args[4]));
 		DataGenerator mDataGenerator = new DataGenerator(config);
 		mDataGenerator.executeKinesis();
 		LOGGER.info("Data Generator Finished");
