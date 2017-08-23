@@ -7,25 +7,26 @@ import kinesis.stream.manager.KinesisStreamUtils;
 
 public class KinesisTestSuite {
 
-	public static final String STREAM_NAME = "CoffeeStream2";
+	public static final String STREAM_NAME = "CoffeeStream";
 	private static final long WAITING_TIME = 60000;
 	private static final long EXPERIMENT_TIME_OUT = 200 * 60 * 1000; // 200 min * 60s/min * 1000 ms/s
 	private static final String SSH_COMMAND = "ssh ec2-user@";
-	private static final String PRODUCER_IP = "34.228.208.214";
-	private static final String CONSUMER_IP = "34.229.224.28";
+	private static final String PRODUCER_IP = "54.80.210.154";
+	private static final String CONSUMER_IP = "54.198.34.245";
 	private static final String CONSUMER_COMMAND = " java -cp hello-1.0.0.jar kinesis.consumer.benchmark.BenchmarkConsumerWorkgroup";
 	private static final String PRODUCER_COMMAND = " java -cp hello-1.0.0.jar data.genenator.DataGeneratorRealTimeTest";
 	private static final String CLEAN_COMMAND = " killall java";
 	private static final int PRODUCER_DURATION = 60;
 	private static final int NUMBER_OF_MAX_SHARDS = 32;
-	private static final int[] EXPERIMENTS = new int[] { 1, 2, 4, 8, 16, 32 };
+//	private static final int[] EXPERIMENTS = new int[] { 32, 16, 8, 4, 2, 1 };
 	// }; // Full throughput, 1/2, 1/4, 1/8, ...
-	// private static final int[] EXPERIMENTS = new int[] { 1 };
-	private static final int[] LIST_SHARDS = new int[] { 32, 16, 8, 4, 2, 1 }; // 1 shard, 2, 4, 8, 16
+	 private static final int[] EXPERIMENTS = new int[] { 1 };
+	private static final int[] LIST_SHARDS = new int[] { 32 }; // 1 shard, 2, 4, 8, 16
+//	private static final int[] LIST_SHARDS = new int[] { 32, 16, 8, 4, 2, 1 }; // 1 shard, 2, 4, 8, 16
 	private static final int NUMBER_OF_CONSUMER_APPLICATION = 1;
 	private static final int MAX_RATE_PER_SHARD = 1000000;
 	// private static final int NUMBER_OF_EXPERIMENT = 1;
-	private static final boolean TEST_PRODUCER_ONLY = false;
+	private static final boolean TEST_PRODUCER_ONLY = true;
 
 	public static void main(String args[]) throws InterruptedException {
 		// for (int i = NUMBER_OF_EXPERIMENT; i >= 1; i--) {
