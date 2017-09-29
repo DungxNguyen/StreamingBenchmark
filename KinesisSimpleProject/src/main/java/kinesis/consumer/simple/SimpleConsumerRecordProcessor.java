@@ -13,7 +13,7 @@ import com.amazonaws.services.kinesis.clientlibrary.types.ProcessRecordsInput;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownInput;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kinesis.common.RecordTemplate;
+import generic.producer.RecordTemplate;
 
 public class SimpleConsumerRecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleConsumerRecordProcessor.class);

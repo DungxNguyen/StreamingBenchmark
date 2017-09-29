@@ -19,13 +19,12 @@ public class SimpleKafkaConsumer {
 	     props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 	     KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-	     consumer.subscribe(Arrays.asList("mytopic"));
+	     consumer.subscribe(Arrays.asList("mytopic", "topic-null"));
 	     while (true) {
 	         ConsumerRecords<String, String> records = consumer.poll(100);
 	         for (ConsumerRecord<String, String> record : records)
-	             System.out.printf("offset = %d, key = %s, value = %s%n", record.offset(), record.key(), record.value());
+	             System.out.printf("topic = %s, offset = %d, key = %s, value = %s%n", record.topic(), record.offset(), record.key(), record.value());
 	     }
-	 
 	}
 
 }

@@ -11,7 +11,7 @@ import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kinesis.common.RecordTemplate;
+import generic.producer.RecordTemplate;
 
 public class SyntheticProducerKPL {
 

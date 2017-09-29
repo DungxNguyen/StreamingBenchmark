@@ -23,7 +23,7 @@ import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.Metric;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import kinesis.common.RecordTemplate;
+import generic.producer.RecordTemplate;
 
 public class DataGenerator {
 	// CONSTANT

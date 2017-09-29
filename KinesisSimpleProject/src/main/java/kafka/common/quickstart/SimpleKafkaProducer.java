@@ -14,7 +14,7 @@ public class SimpleKafkaProducer {
 		System.out.println("Hello Kafka");
 		 Properties props = new Properties();
 		 props.put("bootstrap.servers", "kafka.aws:9092");
-		 props.put("bootstrap.servers", "localhost:9092");
+//		 props.put("bootstrap.servers", "localhost:9092");
 		 props.put("acks", "all");
 		 props.put("retries", 1);
 		 props.put("batch.size", 16384);
