@@ -28,7 +28,7 @@ public class KafkaProducerWrapper extends KafkaProducer implements ProducerInter
 	public Future sendMessage(RecordTemplate record) {
 		ProducerRecord kafkaRecord = null;
 		try {
-			kafkaRecord = new ProducerRecord(kafkaTopic, objectMapper.writeValueAsString(record));
+			kafkaRecord = new ProducerRecord(kafkaTopic, objectMapper.writeValueAsBytes(record));
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

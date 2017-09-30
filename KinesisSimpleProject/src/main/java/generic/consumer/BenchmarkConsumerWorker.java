@@ -1,8 +1,6 @@
 package generic.consumer;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -13,16 +11,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
-import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
-
-import data.genenator.KinesisTestSuite;
+//import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 
 public abstract class BenchmarkConsumerWorker implements Runnable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerWorker.class);
-	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 60;
+	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 5;
 	private static final String CONSUMER_METRICS_FILENAME = "consumer.csv";
 
 	private static long DURATION_START = System.currentTimeMillis();
@@ -32,7 +25,7 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 
 	private Set<Integer> idSet = Collections.synchronizedSet(new ConcurrentSkipListSet<Integer>());
 	private long checkCode = -1;
-	private Worker worker;
+	// private Worker worker;
 	private boolean running = false;
 
 	private String applicationName;
@@ -41,23 +34,26 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 	public BenchmarkConsumerWorker() {
 		this("");
 	}
-	
+
 	public BenchmarkConsumerWorker(String applicationName) {
 		setApplicationName(applicationName);
 	}
-	
-	abstract BenchmarkConsumerWorker createConsumer(String identifier);
 
-	public abstract void execute() throws Exception; //{
-//		running = true;
-//		final KinesisClientLibConfiguration config = new KinesisClientLibConfiguration(applicationName,
-//				KinesisTestSuite.STREAM_NAME, new ProfileCredentialsProvider("default"),
-//				InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID());
-//		config.withRegionName("us-west-1");
-//		final IRecordProcessorFactory recordProcessorFactory = new BenchmarkConsumerRecordProcessorFactory(this);
-//		worker = new Worker.Builder().recordProcessorFactory(recordProcessorFactory).config(config).build();
-//		worker.run();
-//	}
+	public abstract BenchmarkConsumerWorker createConsumer(String identifier);
+
+	public abstract void execute() throws Exception; // {
+	// running = true;
+	// final KinesisClientLibConfiguration config = new
+	// KinesisClientLibConfiguration(applicationName,
+	// KinesisTestSuite.STREAM_NAME, new ProfileCredentialsProvider("default"),
+	// InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID());
+	// config.withRegionName("us-west-1");
+	// final IRecordProcessorFactory recordProcessorFactory = new
+	// BenchmarkConsumerRecordProcessorFactory(this);
+	// worker = new
+	// Worker.Builder().recordProcessorFactory(recordProcessorFactory).config(config).build();
+	// worker.run();
+	// }
 
 	public String getApplicationName() {
 		return applicationName;
@@ -144,7 +140,7 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 				}
 				try {
 					shutdown();
-				} catch (IOException e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -160,12 +156,15 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 				return false;
 		return true;
 	}
+	
+	public abstract void consumerShutdown() throws Exception;
 
-	public void shutdown() throws IOException {
+	public void shutdown() throws Exception {
 		LOGGER.info("Try to shutdown, status running: " + running);
 		if (!running)
 			return;
-		worker.shutdown();
+		// Child class must implement consumer shutdown
+		consumerShutdown();
 		printMeasurement();
 		running = false;
 	}
@@ -182,7 +181,11 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 		metrics.appendToFile(CONSUMER_METRICS_FILENAME);
 	}
 
-	public boolean genRunningStatus() {
+	public boolean getRunningStatus() {
 		return running;
+	}
+
+	public void setRunningStatus(boolean runningStatus) {
+		running = runningStatus;
 	}
 }

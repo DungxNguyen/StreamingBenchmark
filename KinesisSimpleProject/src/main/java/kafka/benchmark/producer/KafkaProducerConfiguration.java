@@ -34,7 +34,7 @@ public class KafkaProducerConfiguration extends BenchmarkProducerConfiguration {
 		kafkaProperties.put("linger.ms", 1);
 		kafkaProperties.put("buffer.memory", 33554432);
 		kafkaProperties.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-		kafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+		kafkaProperties.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
 		// add Kafka Properties to configuration
 		this.setKafkaProperties(kafkaProperties);

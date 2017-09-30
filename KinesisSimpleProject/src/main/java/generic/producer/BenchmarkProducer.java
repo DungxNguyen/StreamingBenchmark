@@ -130,7 +130,7 @@ public class BenchmarkProducer {
 
 	public synchronized int registerBlock() {
 		recordCounter += config.getBlock();
-		return recordCounter;
+		return recordCounter - config.getBlock();
 	}
 
 	private class ProducerThread implements Runnable {

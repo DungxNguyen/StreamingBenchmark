@@ -21,8 +21,9 @@ public class BenchmarkConsumerWorkgroup {
 	}
 
 	public static void main(String[] args) {
-		BenchmarkConsumerWorkgroup workgroup = new BenchmarkConsumerWorkgroup(args[0], Integer.valueOf(args[1]), null);
-		workgroup.execute();
+		// example of how to run
+//		BenchmarkConsumerWorkgroup workgroup = new BenchmarkConsumerWorkgroup(args[0], Integer.valueOf(args[1]), null);
+//		workgroup.execute();
 	}
 	
 	private void printLatency() {
@@ -36,14 +37,7 @@ public class BenchmarkConsumerWorkgroup {
 	private boolean checkComplete() {
 		boolean check = true;
 		for (int i = 0; i < numberOfApplications; i++) {
-			// if (workers[i].checkCode()) {
-			// LOGGER.info("Application " + i + " check code successfully");
-			// } else if (!workers[i].genRunningStatus()){
-			// LOGGER.info("Application " + i + " check code failed.");
-			// } else {
-			// check = false;
-			// }
-			if (!workers[i].genRunningStatus()) {
+			if (!workers[i].getRunningStatus()) {
 				if (workers[i].checkCode())
 					LOGGER.info("Application " + i + " check code successfully");
 				else
@@ -55,10 +49,9 @@ public class BenchmarkConsumerWorkgroup {
 		return check;
 	}
 
-	private void execute() {
+	public void execute() {
 		for (int i = 0; i < numberOfApplications; i++) {
-			Thread workerThread = new Thread(workers[i]);
-			workerThread.start();
+			new Thread(workers[i]).start();
 		}
 
 		new Thread(new Runnable() {
