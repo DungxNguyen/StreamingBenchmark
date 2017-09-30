@@ -7,4 +7,5 @@ public interface ProducerInterface<T> {
 	public ProducerInterface<T> createProducer();
 	public Future<T> sendMessage(RecordTemplate record);
 	public void flush();
+	public ProducerMetric calculateMetric();
 }

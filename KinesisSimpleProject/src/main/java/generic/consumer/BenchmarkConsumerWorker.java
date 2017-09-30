@@ -188,4 +188,5 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 	public void setRunningStatus(boolean runningStatus) {
 		running = runningStatus;
 	}
+	
 }
