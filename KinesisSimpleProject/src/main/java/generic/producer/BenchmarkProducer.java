@@ -168,7 +168,6 @@ public class BenchmarkProducer {
 
 				int startId = registerBlock();
 				for (int i = 0; i < config.getBlock(); i++) {
-					// new Record Template
 					RecordTemplate record = new RecordTemplate();
 					Map<String, String> fieldValues = mFieldGenerator.genFieldValuePairs();
 					record.setLevel(fieldValues.getOrDefault("level", DEFAULT_VALUE));
@@ -178,14 +177,7 @@ public class BenchmarkProducer {
 					record.setId(startId++);
 					record.setTime(System.currentTimeMillis());
 
-					// Ask producer to send record
 					threadProducer.sendMessage(record);
-
-					// Set up sleep time, expect each iteration has total time based on exponential
-					// dist
-					// with mean = average delay
-					// Thread.sleep((long) mExponentialDistribution.sample() - windowsStartTime +
-					// System.currentTimeMillis());
 				}
 
 				if (threadGap >= 1) {
