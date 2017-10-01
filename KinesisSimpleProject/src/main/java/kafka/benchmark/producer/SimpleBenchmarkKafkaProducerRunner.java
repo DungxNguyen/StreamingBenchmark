@@ -13,10 +13,12 @@ public class SimpleBenchmarkKafkaProducerRunner {
 		config.setConfigName("test-null");
 		config.setTopic("topic-null");
 		config.setDuration(10);
-		config.setRatePerHour(10000);
+		config.setRatePerHour(1000000);
 		config.setGap(-1);
 		config.setBlock(10);
 		config.setDefaultKafkaProperties();
+		config.getKafkaProperties().replace("bootstrap.servers", "kafka.aws:9020");
+		
 
 		SimpleBenchmarkKafkaProducer kafkaBenchmark = new SimpleBenchmarkKafkaProducer(config);
 		kafkaBenchmark.execute();

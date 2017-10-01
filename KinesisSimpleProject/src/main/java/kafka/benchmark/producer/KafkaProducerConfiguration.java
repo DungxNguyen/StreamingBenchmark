@@ -14,6 +14,7 @@ public class KafkaProducerConfiguration extends BenchmarkProducerConfiguration {
 
 	public void setTopic(String topic) {
 		this.topic = topic;
+		kafkaProperties.put("topic", topic);
 	}
 
 	public Properties getKafkaProperties() {

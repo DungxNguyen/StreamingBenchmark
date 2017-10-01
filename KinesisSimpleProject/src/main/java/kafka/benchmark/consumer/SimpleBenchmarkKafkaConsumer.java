@@ -28,7 +28,7 @@ public class SimpleBenchmarkKafkaConsumer extends BenchmarkConsumerWorker {
 
 	public SimpleBenchmarkKafkaConsumer(KafkaConsumerConfiguration config) {
 		this.config = config;
-		consumer = new KafkaConsumer<>(config.getConsumerProperties());
+		consumer = new KafkaConsumer<>(config.getKafkaProperties());
 		consumer.subscribe(Arrays.asList(config.getTopic()));
 		numberOfPartitions = consumer.partitionsFor(config.getTopic()).size();
 		kafkaConsumerThreads = new KafkaConsumerThread[numberOfPartitions];
@@ -36,6 +36,7 @@ public class SimpleBenchmarkKafkaConsumer extends BenchmarkConsumerWorker {
 		LOGGER.info("Partition Info:" + consumer.partitionsFor(config.getTopic()).get(0));
 	}
 
+	// TODO implement indentifier
 	@Override
 	public BenchmarkConsumerWorker createConsumer(String identifier) {
 		return new SimpleBenchmarkKafkaConsumer(config);
@@ -46,7 +47,7 @@ public class SimpleBenchmarkKafkaConsumer extends BenchmarkConsumerWorker {
 		setRunningStatus(true);
 		kafkaConsumerThreads[0] = new KafkaConsumerThread(this.consumer);
 		for (int i = 1; i < numberOfPartitions; i++) {
-			kafkaConsumerThreads[i] = new KafkaConsumerThread(this.config.getConsumerProperties());
+			kafkaConsumerThreads[i] = new KafkaConsumerThread(this.config.getKafkaProperties());
 		}
 		for (KafkaConsumerThread thread : kafkaConsumerThreads) {
 			new Thread(thread).start();
@@ -96,10 +97,10 @@ public class SimpleBenchmarkKafkaConsumer extends BenchmarkConsumerWorker {
 					try {
 						byte[] data = record.value();
 						RecordTemplate recordTemplate = objectMapper.readValue(data, RecordTemplate.class);
-						LOGGER.info("" + recordTemplate.getId());
+//						LOGGER.info("" + recordTemplate.getId());
 						addCapacity(data.length);
 						if (!start) {
-							BenchmarkConsumerWorker.setStartingTime();
+							setStartingTime();
 							start = true;
 						}
 						if (recordTemplate.getCat().equals("CHECKCODE")) {

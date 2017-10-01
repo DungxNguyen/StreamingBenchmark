@@ -75,6 +75,9 @@ public class BenchmarkProducer {
 		parallelExecute();
 
 		// producer.flush();
+		// Checkcode is the highest id of messages
+		// Because mesasge id starts at 0, the highest id is equal to the number
+		// Of Message minus 1
 		sendCheckingCode(recordCounter - 1);
 
 		// calculateStatistics();
@@ -87,9 +90,10 @@ public class BenchmarkProducer {
 
 		// Create metrics
 		ProducerMetric producerMetrics = new ProducerMetric();
-		LOGGER.info("Producer metrics:");
+		LOGGER.info("Producer metrics being calucalted:");
 		producerMetrics = calculateMetrics();
 		producerMetrics.appendToFile(METRICS_OUTPUT_FILENAME);
+		LOGGER.info("Reach here");
 	}
 
 	private ProducerMetric calculateMetrics() throws InterruptedException, ExecutionException {
@@ -99,20 +103,31 @@ public class BenchmarkProducer {
 		double retriesPerRecord = 0;
 		double dataPerSecond = 0;
 		double recordsPerSecond = 0;
+		int duration = 0;
+		LOGGER.info("Number of producer thread: " + metricsList.size());
 		for (Future<ProducerMetric> metricFuture : metricsList) {
+			LOGGER.info("Thread is done?: " + metricFuture.isDone());
 			ProducerMetric metric = metricFuture.get();
 			bufferingTime += metric.bufferingTime;
 			error += metric.error;
 			retriesPerRecord += metric.retriesPerRecord;
 			dataPerSecond += metric.dataPerSecond;
 			recordsPerSecond += metric.recordsPerSecond;
+			duration += metric.duration;
 		}
+		// Aggregate data
+		producerMetrics.duration = duration / metricsList.size();
+		producerMetrics.recordNumber = recordCounter;
 		producerMetrics.bufferingTime = bufferingTime / metricsList.size();
-		producerMetrics.error = (int) error;
-		producerMetrics.retriesPerRecord = retriesPerRecord;
+		producerMetrics.retriesPerRecord = retriesPerRecord * producerMetrics.duration / producerMetrics.recordNumber;
 		producerMetrics.dataPerSecond = dataPerSecond;
 		producerMetrics.recordsPerSecond = recordsPerSecond; 
 		producerMetrics.recordsPerHour = producerMetrics.recordsPerSecond * 3600;
+		producerMetrics.error = (int) (error * producerMetrics.duration);
+		
+		// Add other info
+		producerMetrics.desiredRate = config.getRatePerHour();
+		producerMetrics.experimentName = config.getConfigName();
 		return producerMetrics;
 	}
 
@@ -125,19 +140,6 @@ public class BenchmarkProducer {
 	}
 
 	private void parallelExecute() throws InterruptedException {
-		// Thread[] executionPool = new Thread[numberOfThreads];
-		// for (int i = 0; i < numberOfThreads; i++) {
-		// executionPool[i] = new Thread(new ProducerThread(config.getRatePerHour() /
-		// numberOfThreads));
-		// executionPool[i].start();
-		// }
-		// for (Thread thread : executionPool) {
-		// try {
-		// thread.join();
-		// } catch (InterruptedException e) {
-		// e.printStackTrace();
-		// }
-		// }
 		int numberOfThreads = config.getRatePerHour() / CONSEQUENCE_MAX + 1;
 		ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
 		List<Callable<ProducerMetric>> threads = new ArrayList<Callable<ProducerMetric>>(numberOfThreads);
@@ -145,6 +147,7 @@ public class BenchmarkProducer {
 			threads.add(new ProducerThread(config.getRatePerHour() / numberOfThreads));
 		}
 		metricsList = executor.invokeAll(threads);
+		executor.shutdown();
 	}
 
 	public synchronized int registerBlock() {
@@ -196,7 +199,13 @@ public class BenchmarkProducer {
 				}
 			}
 			threadProducer.flush();
-			return threadProducer.calculateMetric();
+			
+			
+			// Calculate metric, producer thread level
+			ProducerMetric producerMetric = threadProducer.calculateMetric();
+			LOGGER.info("Thread duration: " + (System.currentTimeMillis() - config.getStartTime()) / 1000);
+			producerMetric.duration = (int) ((System.currentTimeMillis() - config.getStartTime()) / 1000);
+			return producerMetric; 
 		}
 
 		@Override

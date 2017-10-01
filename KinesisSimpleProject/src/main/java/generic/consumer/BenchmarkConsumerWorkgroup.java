@@ -8,36 +8,53 @@ public class BenchmarkConsumerWorkgroup {
 
 	private int numberOfApplications;
 	private BenchmarkConsumerWorker[] workers;
+	private boolean isRunning = false;
 
-	public BenchmarkConsumerWorkgroup(String experimentName, int numberOfApplications, BenchmarkConsumerWorker consumer) {
+	public BenchmarkConsumerWorkgroup(String experimentName, int numberOfApplications,
+			BenchmarkConsumerWorker consumer) {
 		this.numberOfApplications = numberOfApplications;
 		workers = new BenchmarkConsumerWorker[numberOfApplications];
-		workers[0] = consumer;
-		for (int i = 1; i < numberOfApplications; i++) {
-			workers[i] = workers[0].createConsumer("Benchmark" + i);
+
+		for (int i = 0; i < numberOfApplications; i++) {
+			if (i == 0) {
+				workers[i] = consumer;
+			} else {
+				workers[i] = consumer.createConsumer(null);
+			}
+			workers[i].metrics.numberOfApplications = numberOfApplications;
+			workers[i].metrics.experimentName = experimentName + "-" + i;
 		}
-		BenchmarkConsumerWorker.metrics.numberOfApplications = numberOfApplications;
-		BenchmarkConsumerWorker.metrics.experimentName = experimentName;
 	}
 
 	public static void main(String[] args) {
 		// example of how to run
-//		BenchmarkConsumerWorkgroup workgroup = new BenchmarkConsumerWorkgroup(args[0], Integer.valueOf(args[1]), null);
-//		workgroup.execute();
+		// BenchmarkConsumerWorkgroup workgroup = new
+		// BenchmarkConsumerWorkgroup(args[0], Integer.valueOf(args[1]), null);
+		// workgroup.execute();
 	}
-	
+
+	// ISSUE: Those are very important: 
+	/// Print latency and print throughput, call get average
+	// by calling them, worker will calculate current metric and add them to final report
+	// if not called, workers will not calucalte until the end
+	// TODO: Make sure workers will calculate independently
 	private void printLatency() {
-		LOGGER.info("Average Latency: " + BenchmarkConsumerWorker.getAverageLatency());
+		for (int i = 0; i < numberOfApplications; i++) {
+			LOGGER.info("Average Latency worker " + i + ": " + workers[i].getAverageLatency());
+		}
 	}
 
 	private void printThroughput() {
-		LOGGER.info("Throughput: (KB/s) " + BenchmarkConsumerWorker.getAverageThouput());
+		for (int i = 0; i < numberOfApplications; i++) {
+			LOGGER.info("Average Throughput worker " + i + ": " + workers[i].getAverageThroughput());
+		}
 	}
 
 	private boolean checkComplete() {
 		boolean check = true;
 		for (int i = 0; i < numberOfApplications; i++) {
 			if (!workers[i].getRunningStatus()) {
+//				LOGGER.info("Worker " + i + ": " + workers[i].getRunningStatus());
 				if (workers[i].checkCode())
 					LOGGER.info("Application " + i + " check code successfully");
 				else
@@ -49,19 +66,24 @@ public class BenchmarkConsumerWorkgroup {
 		return check;
 	}
 
-	public void execute() {
+	public void execute() throws InterruptedException {
+		setRunning(true);
+		Thread[] threads = new Thread[numberOfApplications];
 		for (int i = 0; i < numberOfApplications; i++) {
-			new Thread(workers[i]).start();
+			threads[i] = new Thread(workers[i]);
+			threads[i].start();
 		}
 
-		new Thread(new Runnable() {
+		Thread guard = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				while (true) {
 					printLatency();
 					printThroughput();
-					if (checkComplete())
+					if (checkComplete()) {
+						setRunning(false);
 						break;
+					}
 					try {
 						Thread.sleep(10000);
 					} catch (InterruptedException e) {
@@ -69,7 +91,20 @@ public class BenchmarkConsumerWorkgroup {
 					}
 				}
 			}
-		}).start();
+		});
+		guard.start();
+//		for (int i = 0; i < numberOfApplications; i++) {
+//			threads[i].join();
+//		}
+//		guard.join();
+	}
+
+	public boolean isRunning() {
+		return isRunning;
+	}
+
+	public void setRunning(boolean isRunning) {
+		this.isRunning = isRunning;
 	}
 
 }

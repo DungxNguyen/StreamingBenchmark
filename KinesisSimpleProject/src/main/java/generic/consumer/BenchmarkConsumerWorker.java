@@ -15,13 +15,13 @@ import org.slf4j.LoggerFactory;
 
 public abstract class BenchmarkConsumerWorker implements Runnable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkConsumerWorker.class);
-	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 5;
+	private static final int TIME_OUT_AFTER_RECEIVE_CODE = 10;
 	private static final String CONSUMER_METRICS_FILENAME = "consumer.csv";
 
-	private static long DURATION_START = System.currentTimeMillis();
-	private static List<Long> latency = Collections.synchronizedList(new CopyOnWriteArrayList<Long>());
-	private static List<Integer> capacity = Collections.synchronizedList(new CopyOnWriteArrayList<Integer>());
-	private static long startingTime;
+	private long DURATION_START = System.currentTimeMillis();
+	private List<Long> latencyList = Collections.synchronizedList(new CopyOnWriteArrayList<Long>());
+	private List<Integer> capacityList = Collections.synchronizedList(new CopyOnWriteArrayList<Integer>());
+	private long startingTime;
 
 	private Set<Integer> idSet = Collections.synchronizedSet(new ConcurrentSkipListSet<Integer>());
 	private long checkCode = -1;
@@ -29,7 +29,7 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 	private boolean running = false;
 
 	private String applicationName;
-	protected static BenchmarkConsumerMetrics metrics = new BenchmarkConsumerMetrics();
+	protected BenchmarkConsumerMetrics metrics = new BenchmarkConsumerMetrics();
 
 	public BenchmarkConsumerWorker() {
 		this("");
@@ -67,27 +67,27 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 		}
 	}
 
-	public static void addLatency(long latency) {
-		BenchmarkConsumerWorker.latency.add(latency);
+	public void addLatency(long latency) {
+		latencyList.add(latency);
 	}
 
-	public static void addCapacity(int capacity) {
-		BenchmarkConsumerWorker.capacity.add(capacity);
+	public void addCapacity(int capacity) {
+		capacityList.add(capacity);
 	}
 
-	public synchronized static double getAverageLatency() {
-		int size = latency.size();
-		double mlatency = (double) latency.stream().mapToLong(Long::longValue).sum() / size;
-		latency.clear();
+	public synchronized double getAverageLatency() {
+		int size = latencyList.size();
+		double mlatency = (double) latencyList.stream().mapToLong(Long::longValue).sum() / size;
+		latencyList.clear();
 		if (mlatency != 0 && !Double.isNaN(mlatency)) {
 			metrics.latency.add(mlatency);
 		}
 		return mlatency;
 	}
 
-	public synchronized static double getAverageThouput() {
-		int sumCapacity = capacity.stream().mapToInt(Integer::intValue).sum();
-		capacity.clear();
+	public synchronized double getAverageThroughput() {
+		int sumCapacity = capacityList.stream().mapToInt(Integer::intValue).sum();
+		capacityList.clear();
 		double throughput = (double) sumCapacity / (System.currentTimeMillis() - getStartingTime());
 		startingTime = System.currentTimeMillis();
 		if (throughput != 0) {
@@ -96,7 +96,7 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 		return throughput;
 	}
 
-	public static void setStartingTime() {
+	public void setStartingTime() {
 		if (startingTime == 0) {
 			startingTime = System.currentTimeMillis();
 			DURATION_START = startingTime;
@@ -104,7 +104,7 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 		}
 	}
 
-	public static long getStartingTime() {
+	public long getStartingTime() {
 		return startingTime;
 	}
 
@@ -177,6 +177,8 @@ public abstract class BenchmarkConsumerWorker implements Runnable {
 			LOGGER.info("Messeages LOST");
 			metrics.allReceived = false;
 		}
+		getAverageLatency();
+		getAverageThroughput();
 		metrics.time = (int) (System.currentTimeMillis() - DURATION_START) / 1000;
 		metrics.appendToFile(CONSUMER_METRICS_FILENAME);
 	}

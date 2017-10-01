@@ -24,14 +24,14 @@ public class ProducerMetric {
 			file.createNewFile();
 			PrintWriter mPrintStream = new PrintWriter(new BufferedWriter(new FileWriter(file)));
 			mPrintStream.println(
-					"Experiment Name, Desired Rate, Records, Errors, Buffering Time, Retries Per Second, Records Per Second, Records Per Hour, Throughput");
+					"Experiment Name, Desired Rate, Records, Errors, Buffering Time, Retries Per Second, Records Per Second, Records Per Hour, Throughput, Duration, Estimated Records Per Second");
 			mPrintStream.println(experimentName + ", " + desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
-					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond);
+					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond + ", " + duration + ", " + (double) recordNumber / duration);
 			mPrintStream.close();
 		} else {
 			PrintWriter mPrintStream = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
 			mPrintStream.println(experimentName + ", " + desiredRate + ", " + recordNumber + ", " + error + ", " + bufferingTime + ", "
-					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond);
+					+ retriesPerRecord + ", " + recordsPerSecond + ", " + recordsPerHour + ", " + dataPerSecond + ", " + duration + ", " + (double) recordNumber / duration);
 			mPrintStream.close();
 		}
 	}
