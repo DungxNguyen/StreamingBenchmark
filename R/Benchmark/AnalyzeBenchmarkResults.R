@@ -50,21 +50,38 @@ aggregate(Throughput ~ Number.of.Shards, subset(unifiedData, (All.Received.)), m
 
 
 # Plot no error all received by # of shards
-moltenThroughputAndThreoticalKinesis <- melt(unifiedData[,c("Number.of.Shards", "Throughput", "Throughput.Limit")], 
+moltenThroughputAndThreoticalKinesis <- unifiedData[,c("Number.of.Shards", "Throughput", "Throughput.Limit")]
+names(moltenThroughputAndThreoticalKinesis)[2] <- "Producer Throughput"
+names(moltenThroughputAndThreoticalKinesis)[3] <- "Incoming Throughput Limitation of equivalent Kinesis"
+moltenThroughputAndThreoticalKinesis <- melt( moltenThroughputAndThreoticalKinesis, 
                                              id = "Number.of.Shards")
-ggplot(moltenThroughputAndThreoticalKinesis , aes(x = factor(Number.of.Shards), y = value, fill = variable)) + 
+plot <- ggplot(moltenThroughputAndThreoticalKinesis , aes(x = factor(Number.of.Shards), y = value, fill = variable)) + 
   geom_bar(stat = "identity", position = position_dodge())
+plot <- plot +   theme(legend.position = "top")
+plot <- plot + xlab("Count of Shards/Partitions") + ylab("KBps")
+plot
+ggsave("KafkaHighVsKinesisLimit.png", plot = plot, device = "png")
 
 # Plot producer and consumer in all settings
 unifiedData$Desired.Rate.In.Millions <- unifiedData$Desired.Rate / 1000000
-moltenProducerAndConsumer <- melt(unifiedData[,c("Number.of.Shards", "Throughput", "Throughput.Average", "Desired.Rate.In.Millions")], 
+moltenProducerAndConsumer <- unifiedData[,c("Number.of.Shards", "Throughput", "Throughput.Average", "Desired.Rate.In.Millions")]
+names(moltenProducerAndConsumer)[2] <- "Producer "
+names(moltenProducerAndConsumer)[3] <- "Consumer "
+moltenProducerAndConsumer <- melt( moltenProducerAndConsumer,  
                                   id = c("Number.of.Shards", "Desired.Rate.In.Millions"))
-ggplot(moltenProducerAndConsumer, aes(x = factor(Desired.Rate.In.Millions), y = value, fill = variable)) + 
+names(moltenProducerAndConsumer)[3] <- "Throughput"
+plot <- ggplot(moltenProducerAndConsumer, aes(x = factor(Desired.Rate.In.Millions), y = value, fill = Throughput)) + 
   geom_bar(stat = "identity", position = position_dodge()) + facet_wrap(~factor(Number.of.Shards))
+plot <- plot + theme(legend.position = "top")
+plot <- plot + xlab("Message Generation Rate (Millions of Messages/Hour)") +
+  ylab("KBps")
+plot
+ggsave("KafkaHighProducerVsConsumer.png", plot = plot, device = "png")
 
 # Throuput vs Latency in all settings: 
 # ggplot(subset(unifiedData), aes(x = Latency.Average, y = Throughput, color = All.Received.)) + geom_point()
 
 # Throuput vs Latency in each settings:
-ggplot(subset(unifiedData), aes(x = log(Latency.Average), y = log(Throughput))) + geom_point() + facet_wrap(~ Number.of.Shards)
+plot <- ggplot(subset(unifiedData), aes(x = log(Latency.Average), y = log(Throughput))) + geom_point() + facet_wrap(~ Number.of.Shards)
+plot
 
